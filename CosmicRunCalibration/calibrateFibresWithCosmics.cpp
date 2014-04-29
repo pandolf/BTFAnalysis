@@ -92,7 +92,7 @@ FitResults fitSingleHisto( TFile* file, const std::string& histoName, double ped
 int main( int argc, char* argv[] ) {
 
 
-  NORDERS = 5;
+  NORDERS = 6;
   if( argc>1 ) {
     NORDERS = atoi(argv[1]);
     std::cout << "-> NORDER is set to: " << NORDERS << std::endl;
@@ -291,6 +291,38 @@ int main( int argc, char* argv[] ) {
 
   c2->SaveAs("summaryPlot.eps");
   c2->SaveAs("summaryPlot.png");
+
+
+  c2->Clear();
+
+  TH1D* h1_mu = new TH1D("mu", "", 4, -0.5, 3.5);
+  h1_mu->SetXTitle( "Channel Number");
+  h1_mu->SetBinContent( 1, fr_0.mu );
+  h1_mu->SetBinContent( 2, fr_1.mu );
+  h1_mu->SetBinContent( 3, fr_2.mu );
+  h1_mu->SetBinContent( 4, fr_3.mu );
+
+  h1_mu->SetBinError( 1, fr_0.mu_err );
+  h1_mu->SetBinError( 2, fr_1.mu_err );
+  h1_mu->SetBinError( 3, fr_2.mu_err );
+  h1_mu->SetBinError( 4, fr_3.mu_err );
+
+  h1_mu->SetMarkerStyle(20);
+  h1_mu->SetMarkerSize(1.6);
+  h1_mu->SetMarkerColor(46);
+
+  TH2D* h2_axes_2 = new TH2D("axes_2", "", 10, -0.5, 3.5, 10, 0., 3.);
+  h2_axes_2->SetXTitle( "Channel Number" );
+  h2_axes_2->SetYTitle( "Poisson #mu" );
+  h2_axes_2->Draw();
+
+
+  label_top->Draw("same");
+  h1_mu->Draw("same");
+
+  c2->SaveAs("poissonMu.eps");
+  c2->SaveAs("poissonMu.png");
+
 
 
   return 0;
