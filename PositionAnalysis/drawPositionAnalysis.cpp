@@ -31,6 +31,10 @@ int main( int argc, char* argv[] ) {
   std::string fileName = "PosAn_" + runName + ".root";
   TFile* file = TFile::Open( fileName.c_str() );
   
+  std::string outputdir = "Plots_" + runName;
+  std::string mkdir_command = "mkdir -p " + outputdir;
+  system(mkdir_command.c_str());
+
 
   TStyle* style = setStyle();
   style->cd();
@@ -48,21 +52,25 @@ int main( int argc, char* argv[] ) {
 
   h2_axes->Draw();
 
+  h2_xyPos_hodo->SetMarkerColor(14);
   h2_xyPos_hodo->Draw("same");
 
-  h2_xyPos->SetMarkerColor(kRed);
+  h2_xyPos->SetMarkerColor(46);
+  //h2_xyPos->SetMarkerColor(kRed-9);
   h2_xyPos->Draw("same");
 
   TGraphErrors* gr_xyCenter      = get_xyCenter( h2_xyPos );
   TGraphErrors* gr_xyCenter_hodo = get_xyCenter( h2_xyPos_hodo );
 
-  gr_xyCenter->SetMarkerColor(kRed+3);
+  gr_xyCenter->SetMarkerColor(kRed+2);
+  gr_xyCenter->SetLineColor(kRed+2);
   gr_xyCenter->SetMarkerStyle(20);
-  gr_xyCenter->SetMarkerSize(1.);
+  gr_xyCenter->SetMarkerSize(1.6);
 
   gr_xyCenter_hodo->SetMarkerColor(kBlack);
+  gr_xyCenter_hodo->SetLineColor(kBlack);
   gr_xyCenter_hodo->SetMarkerStyle(20);
-  gr_xyCenter_hodo->SetMarkerSize(1.);
+  gr_xyCenter_hodo->SetMarkerSize(1.6);
 
 
   TLegend* legend = new TLegend( 0.75, 0.21, 0.9, 0.35 );
@@ -88,11 +96,11 @@ int main( int argc, char* argv[] ) {
   label_run->AddText(Form("Run %s", runName.c_str()));
   label_run->Draw("same");
 
-  gr_xyCenter->Draw("p same");
   gr_xyCenter_hodo->Draw("p same");
+  gr_xyCenter->Draw("p same");
 
-  c1->SaveAs("xyPos.eps");
-  c1->SaveAs("xyPos.png");
+  c1->SaveAs(Form("%s/xyPos.eps", outputdir.c_str()) );
+  c1->SaveAs(Form("%s/xyPos.png", outputdir.c_str()) );
 
   return 0;
 
@@ -192,10 +200,10 @@ TStyle* setStyle() {
 TGraphErrors* get_xyCenter( TH2D* h2_xyPos ) {
 
   float x     = h2_xyPos->ProjectionX()->GetMean();
-  float x_err = h2_xyPos->ProjectionX()->GetMeanError();
+  float x_err = h2_xyPos->ProjectionX()->GetRMS();
 
   float y     = h2_xyPos->ProjectionY()->GetMean();
-  float y_err = h2_xyPos->ProjectionY()->GetMeanError();
+  float y_err = h2_xyPos->ProjectionY()->GetRMS();
 
   TGraphErrors* gr_point = new TGraphErrors(0);
   gr_point->SetPoint( 0, x, y );
