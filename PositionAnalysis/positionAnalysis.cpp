@@ -14,7 +14,7 @@
 
 
 
-std::vector< std::pair<float, float> > getPedestals( const std::string& fileName, const std::string& name );
+std::vector< std::pair<float, float> > getPedestals( const std::string& fileName, const std::string& name, int n );
 std::vector< std::pair<float, float> > getPedestalsHodo( const std::string type, const std::string fileName );
 std::vector<float> subtractPedestals( std::vector<float> raw, std::vector< std::pair<float, float> > pedestals, float nSigma );
 float sumVector( std::vector<float> v );
@@ -42,18 +42,18 @@ int main( int argc, char* argv[] ) {
   TTree* tree = (TTree*)file->Get("eventRawData");
 
 
-  std::vector<std::pair<float, float> > pedestals = getPedestals("run_BTF_000002_ped_dqmPlots.root", "CEF3RAW_cef3RawSpectrum" );
+  std::vector<std::pair<float, float> > pedestals = getPedestals("run_BTF_000002_ped_dqmPlots.root", "CEF3RAW_cef3RawSpectrum", CEF3_CHANNELS );
   std::cout << std::endl;
   std::cout << "-> Got pedestals of CeF3: " << std::endl;
   for( unsigned i=0; i<CEF3_CHANNELS; ++i )
-    std::cout << " CeF3 Channel " << i << ": " << pedestals[i].first << std::endl;
+    std::cout << " CeF3 Channel " << i << ": " << pedestals[i].first << " (+- " << pedestals[i].second << ")" << std::endl;
   std::cout << std::endl;
 
-  std::vector<std::pair<float, float> > pedestals_bgo = getPedestals("run_BTF_000002_ped_dqmPlots.root", "BGORAW_bgoRawSpectrum" );
+  std::vector<std::pair<float, float> > pedestals_bgo = getPedestals("run_BTF_000002_ped_dqmPlots.root", "BGORAW_bgoRawSpectrum", BGO_CHANNELS );
   std::cout << std::endl;
   std::cout << "-> Got pedestals of BGO: " << std::endl;
   for( unsigned i=0; i<BGO_CHANNELS; ++i )
-    std::cout << " BGO Channel " << i << ": " << pedestals_bgo[i].first << std::endl;
+    std::cout << " BGO Channel " << i << ": " << pedestals_bgo[i].first << " (+- " << pedestals_bgo[i].second << ")" << std::endl;
   std::cout << std::endl;
 
   std::vector<std::pair<float, float> > pedestals_hodox = getPedestalsHodo("X", "run_BTF_000002_ped_dqmPlots.root");
@@ -73,13 +73,13 @@ int main( int argc, char* argv[] ) {
   UInt_t adcChannel[40];
   tree->SetBranchAddress( "adcChannel", adcChannel );
 
+  float xySize = 25.; // in mm
 
   int nBins = 500;
-  float xMax = 40.;
+  float xMax = xySize*3./2.;
 
   TH1D* h1_xPos = new TH1D("xPos", "", nBins, -xMax, xMax);
   TH1D* h1_yPos = new TH1D("yPos", "", nBins, -xMax, xMax);
-
   TH2D* h2_xyPos = new TH2D("xyPos", "", nBins, -xMax, xMax, nBins, -xMax, xMax);
 
   TH1D* h1_cef3_0   = new TH1D("cef3_0",   "", 4097, 0., 4097.);
@@ -102,13 +102,23 @@ int main( int argc, char* argv[] ) {
   TH1D* h1_bgo_corr_5   = new TH1D("bgo_corr_5",   "", 4097, 0., 4097.);
   TH1D* h1_bgo_corr_6   = new TH1D("bgo_corr_6",   "", 4097, 0., 4097.);
   TH1D* h1_bgo_corr_7   = new TH1D("bgo_corr_7",   "", 4097, 0., 4097.);
-  
+  TH1D* h1_bgo_corr_tot   = new TH1D("bgo_corr_tot",   "", 4097, 0., 8.*4097.);
+
+  TH1D* h1_xPos_bgo = new TH1D("xPos_bgo", "", nBins, -xMax, xMax);
+  TH1D* h1_yPos_bgo = new TH1D("yPos_bgo", "", nBins, -xMax, xMax);
+  TH2D* h2_xyPos_bgo = new TH2D("xyPos_bgo", "", nBins, -xMax, xMax, nBins, -xMax, xMax);
+
   TH1D* h1_xPos_hodo = new TH1D("xPos_hodo", "", nBins, -xMax, xMax);
   TH1D* h1_yPos_hodo = new TH1D("yPos_hodo", "", nBins, -xMax, xMax);
   TH2D* h2_xyPos_hodo = new TH2D("xyPos_hodo", "", nBins, -xMax, xMax, nBins, -xMax, xMax);
 
-  TH2D* h2_correlation_xPos = new TH2D("correlation_xPos", "", nBins, -xMax, xMax,  nBins, -xMax, xMax);
-  TH2D* h2_correlation_yPos = new TH2D("correlation_yPos", "", nBins, -xMax, xMax,  nBins, -xMax, xMax);
+
+
+  TH2D* h2_correlation_hodo_xPos = new TH2D("correlation_hodo_xPos", "", nBins, -xySize/2., xySize/2.,  nBins, -xySize/2., xySize/2.);
+  TH2D* h2_correlation_hodo_yPos = new TH2D("correlation_hodo_yPos", "", nBins, -xySize/2., xySize/2.,  nBins, -xySize/2., xySize/2.);
+
+  TH2D* h2_correlation_bgo_xPos = new TH2D("correlation_bgo_xPos", "", nBins, -xySize/2., xySize/2.,  nBins, -xySize/2., xySize/2.);
+  TH2D* h2_correlation_bgo_yPos = new TH2D("correlation_bgo_yPos", "", nBins, -xySize/2., xySize/2.,  nBins, -xySize/2., xySize/2.);
 
 
   int nentries = tree->GetEntries();
@@ -178,6 +188,7 @@ int main( int argc, char* argv[] ) {
     std::vector<float>  bgo_corr = subtractPedestals( bgo , pedestals_bgo, 2. );
     std::vector<float> cef3_corr = subtractPedestals( cef3, pedestals,     2. );
 
+
     bool cef3_ok = checkVector(cef3);
     bool cef3_corr_ok = checkVector(cef3_corr);
 
@@ -194,6 +205,61 @@ int main( int argc, char* argv[] ) {
     h2_xyPos_hodo->Fill(xPos_hodo, yPos_hodo);
 
 
+
+    bool bgo_ok = checkVector(bgo, 4095.);
+    bool bgo_corr_ok = checkVector(bgo_corr, 4095.);
+
+    float xPos_bgo;
+    float yPos_bgo;
+
+    if( bgo_ok && bgo_corr_ok ) {
+
+      float eTot_bgo_corr  = sumVector(bgo_corr);
+
+      h1_bgo_corr_0->Fill( bgo_corr[0] );
+      h1_bgo_corr_1->Fill( bgo_corr[1] );
+      h1_bgo_corr_2->Fill( bgo_corr[2] );
+      h1_bgo_corr_3->Fill( bgo_corr[3] );
+      h1_bgo_corr_4->Fill( bgo_corr[4] );
+      h1_bgo_corr_5->Fill( bgo_corr[5] );
+      h1_bgo_corr_6->Fill( bgo_corr[6] );
+      h1_bgo_corr_7->Fill( bgo_corr[7] );
+      h1_bgo_corr_tot->Fill( eTot_bgo_corr );
+
+      //   0  1  2
+      //   3     4
+      //   5  6  7
+
+      float position_bgo = 1.5*xySize;
+      
+      std::vector<float> xPosW_bgo;
+      xPosW_bgo.push_back(bgo_corr[0]*(-position_bgo));
+      xPosW_bgo.push_back(0.);
+      xPosW_bgo.push_back(bgo_corr[2]*(+position_bgo));
+      xPosW_bgo.push_back(bgo_corr[3]*(-position_bgo));
+      xPosW_bgo.push_back(bgo_corr[4]*(+position_bgo));
+      xPosW_bgo.push_back(bgo_corr[5]*(-position_bgo));
+      xPosW_bgo.push_back(0.);
+      xPosW_bgo.push_back(bgo_corr[7]*(+position_bgo));
+      
+      std::vector<float> yPosW_bgo;
+      yPosW_bgo.push_back(bgo_corr[0]*(+position_bgo));
+      yPosW_bgo.push_back(bgo_corr[1]*(+position_bgo));
+      yPosW_bgo.push_back(bgo_corr[2]*(+position_bgo));
+      yPosW_bgo.push_back(0.);
+      yPosW_bgo.push_back(0.);
+      yPosW_bgo.push_back(bgo_corr[5]*(-position_bgo));
+      yPosW_bgo.push_back(bgo_corr[6]*(-position_bgo));
+      yPosW_bgo.push_back(bgo_corr[7]*(-position_bgo));
+
+      xPos_bgo = sumVector( xPosW_bgo )/eTot_bgo_corr;
+      yPos_bgo = sumVector( yPosW_bgo )/eTot_bgo_corr;
+      
+      h1_xPos_bgo->Fill( xPos_bgo );
+      h1_yPos_bgo->Fill( yPos_bgo );
+      h2_xyPos_bgo->Fill( xPos_bgo, yPos_bgo );
+      
+    }  // if bgo ok
 
 
     if( cef3_ok ) {
@@ -224,24 +290,25 @@ int main( int argc, char* argv[] ) {
         //   3      2
 
 
-        float xySize = 25.; // in mm
         float chamfer = 2.1; // in mm
 
         float position = xySize/2. - chamfer/4.;
 
-        float xPosW_0 = cef3_corr[0]*(-position);
-        float xPosW_1 = cef3_corr[1]*(+position);
-        float xPosW_2 = cef3_corr[2]*(+position);
-        float xPosW_3 = cef3_corr[3]*(-position);
+        std::vector<float> xPosW;
+        xPosW.push_back(cef3_corr[0]*(-position));
+        xPosW.push_back(cef3_corr[1]*(+position));
+        xPosW.push_back(cef3_corr[2]*(+position));
+        xPosW.push_back(cef3_corr[3]*(-position));
 
-        float yPosW_0 = cef3_corr[0]*(+position);
-        float yPosW_1 = cef3_corr[1]*(+position);
-        float yPosW_2 = cef3_corr[2]*(-position);
-        float yPosW_3 = cef3_corr[3]*(-position);
+        std::vector<float> yPosW;
+        yPosW.push_back(cef3_corr[0]*(+position));
+        yPosW.push_back(cef3_corr[1]*(+position));
+        yPosW.push_back(cef3_corr[2]*(-position));
+        yPosW.push_back(cef3_corr[3]*(-position));
 
 
-        float xPos = (xPosW_0+xPosW_1+xPosW_2+xPosW_3)/eTot_corr;
-        float yPos = (yPosW_0+yPosW_1+yPosW_2+yPosW_3)/eTot_corr;
+        float xPos = sumVector(xPosW)/eTot_corr;
+        float yPos = sumVector(yPosW)/eTot_corr;
 
         h1_xPos->Fill( xPos );
         h1_yPos->Fill( yPos );
@@ -251,8 +318,13 @@ int main( int argc, char* argv[] ) {
 
         // CORRELATIONS BETWEEN CALO AND HODO:
   
-        h2_correlation_xPos->Fill( xPos, xPos_hodo );
-        h2_correlation_yPos->Fill( yPos, yPos_hodo );
+        h2_correlation_hodo_xPos->Fill( xPos, xPos_hodo );
+        h2_correlation_hodo_yPos->Fill( yPos, yPos_hodo );
+
+        if( bgo_ok && bgo_corr_ok ) {
+          h2_correlation_bgo_xPos->Fill( xPos, xPos_bgo );
+          h2_correlation_bgo_yPos->Fill( yPos, yPos_bgo );
+        }
 
       } // if cef3_ok
 
@@ -285,12 +357,29 @@ int main( int argc, char* argv[] ) {
   h1_cef3_tot->Write();
   h1_cef3_corr_tot->Write();
   
+  h1_xPos_bgo->Write();
+  h1_yPos_bgo->Write();
+  h2_xyPos_bgo->Write();
+  
   h1_xPos_hodo->Write();
   h1_yPos_hodo->Write();
   h2_xyPos_hodo->Write();
 
-  h2_correlation_xPos->Write();
-  h2_correlation_yPos->Write();
+  h2_correlation_hodo_xPos->Write();
+  h2_correlation_hodo_yPos->Write();
+
+  h2_correlation_bgo_xPos->Write();
+  h2_correlation_bgo_yPos->Write();
+
+  h1_bgo_corr_0->Write();
+  h1_bgo_corr_1->Write();
+  h1_bgo_corr_2->Write();
+  h1_bgo_corr_3->Write();
+  h1_bgo_corr_4->Write();
+  h1_bgo_corr_5->Write();
+  h1_bgo_corr_6->Write();
+  h1_bgo_corr_7->Write();
+  h1_bgo_corr_tot->Write();
   
   outfile->Close();
   std::cout << "-> Histograms saved in: " << outfile->GetName() << std::endl;
@@ -301,12 +390,12 @@ int main( int argc, char* argv[] ) {
 
 
 
-std::vector< std::pair<float, float> > getPedestals( const std::string& fileName, const std::string& name ) {
+std::vector< std::pair<float, float> > getPedestals( const std::string& fileName, const std::string& name, int n ) {
 
   TFile* file = TFile::Open(fileName.c_str());
 
   std::vector< std::pair<float, float> > peds;
-  for( int i=0; i<CEF3_CHANNELS; ++i ) {
+  for( int i=0; i<n; ++i ) {
     TH1D* h1_ped = (TH1D*)file->Get(Form("%s_%d", name.c_str(), i));
     std::pair<float, float>  thispair;
     thispair.first  = h1_ped->GetMean();

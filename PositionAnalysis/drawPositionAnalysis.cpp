@@ -30,6 +30,7 @@ int main( int argc, char* argv[] ) {
 
   std::string fileName = "PosAn_" + runName + ".root";
   TFile* file = TFile::Open( fileName.c_str() );
+  std::cout << "-> Opened file: " << fileName << std::endl;
   
   std::string outputdir = "Plots_" + runName;
   std::string mkdir_command = "mkdir -p " + outputdir;
@@ -45,8 +46,11 @@ int main( int argc, char* argv[] ) {
 
   TH2D* h2_xyPos = (TH2D*)file->Get("xyPos"); 
   TH2D* h2_xyPos_hodo = (TH2D*)file->Get("xyPos_hodo"); 
+  TH2D* h2_xyPos_bgo = (TH2D*)file->Get("xyPos_bgo"); 
 
-  TH2D* h2_axes = new TH2D("axes", "", 10, -10., 10., 10, -10., 10.);
+  float xySize = 25.;
+  float xMax = xySize*3./2.;
+  TH2D* h2_axes = new TH2D("axes", "", 10, -xMax, xMax, 10, -xMax, xMax);
   h2_axes->SetXTitle("X Position [mm]");
   h2_axes->SetYTitle("Y Position [mm]");
 
@@ -56,11 +60,15 @@ int main( int argc, char* argv[] ) {
   h2_xyPos_hodo->Draw("same");
 
   h2_xyPos->SetMarkerColor(46);
-  //h2_xyPos->SetMarkerColor(kRed-9);
   h2_xyPos->Draw("same");
+
+  h2_xyPos_bgo->SetMarkerColor(30);
+  h2_xyPos_bgo->Draw("same");
+
 
   TGraphErrors* gr_xyCenter      = get_xyCenter( h2_xyPos );
   TGraphErrors* gr_xyCenter_hodo = get_xyCenter( h2_xyPos_hodo );
+  TGraphErrors* gr_xyCenter_bgo  = get_xyCenter( h2_xyPos_bgo  );
 
   gr_xyCenter->SetMarkerColor(kRed+2);
   gr_xyCenter->SetLineColor(kRed+2);
@@ -72,11 +80,17 @@ int main( int argc, char* argv[] ) {
   gr_xyCenter_hodo->SetMarkerStyle(20);
   gr_xyCenter_hodo->SetMarkerSize(1.6);
 
+  gr_xyCenter_bgo->SetMarkerColor(kGreen+3);
+  gr_xyCenter_bgo->SetLineColor(kGreen+3);
+  gr_xyCenter_bgo->SetMarkerStyle(20);
+  gr_xyCenter_bgo->SetMarkerSize(1.6);
 
-  TLegend* legend = new TLegend( 0.75, 0.21, 0.9, 0.35 );
+
+  TLegend* legend = new TLegend( 0.75, 0.21, 0.9, 0.39 );
   legend->SetFillColor(0);
   legend->SetTextSize(0.038);
   legend->AddEntry( gr_xyCenter, "CeF3", "P" );
+  legend->AddEntry( gr_xyCenter_bgo, "BGO", "P" );
   legend->AddEntry( gr_xyCenter_hodo, "Hodo", "P" );
   legend->Draw("same");
 
@@ -97,10 +111,34 @@ int main( int argc, char* argv[] ) {
   label_run->Draw("same");
 
   gr_xyCenter_hodo->Draw("p same");
+  gr_xyCenter_bgo->Draw("p same");
   gr_xyCenter->Draw("p same");
 
   c1->SaveAs(Form("%s/xyPos.eps", outputdir.c_str()) );
   c1->SaveAs(Form("%s/xyPos.png", outputdir.c_str()) );
+
+  c1->Clear();
+
+  xMax = xySize/2.;
+  TH2D* h2_axes_zoom = new TH2D("axes_zoom", "", 10, -xMax, xMax, 10, -xMax, xMax);
+  h2_axes_zoom->SetXTitle("X Position [mm]");
+  h2_axes_zoom->SetYTitle("Y Position [mm]");
+  h2_axes_zoom->Draw();
+
+  h2_xyPos_hodo->Draw("same");
+  h2_xyPos->Draw("same");
+  h2_xyPos_bgo->Draw("same");
+
+  legend->Draw("same");
+  label_top->Draw("same");
+  label_run->Draw("same");
+
+  gr_xyCenter_hodo->Draw("p same");
+  gr_xyCenter_bgo->Draw("p same");
+  gr_xyCenter->Draw("p same");
+
+  c1->SaveAs(Form("%s/xyPos_zoom.eps", outputdir.c_str()) );
+  c1->SaveAs(Form("%s/xyPos_zoom.png", outputdir.c_str()) );
 
   return 0;
 
