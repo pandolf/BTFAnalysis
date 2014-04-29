@@ -88,6 +88,9 @@ int main( int argc, char* argv[] ) {
   TH1D* h1_yPos_hodo = new TH1D("yPos_hodo", "", nBins, -xMax, xMax);
   TH2D* h2_xyPos_hodo = new TH2D("xyPos_hodo", "", nBins, -xMax, xMax, nBins, -xMax, xMax);
 
+  TH2D* h2_correlation_xPos = new TH2D("correlation_xPos", "", nBins, -xMax, xMax,  nBins, -xMax, xMax);
+  TH2D* h2_correlation_yPos = new TH2D("correlation_yPos", "", nBins, -xMax, xMax,  nBins, -xMax, xMax);
+
 
   int nentries = tree->GetEntries();
 
@@ -139,20 +142,24 @@ int main( int argc, char* argv[] ) {
     }
 
 
+    bool vetoEvent = false;
     for( unsigned i=0; i<cef3.size(); ++i ) {
 
       if( cef3[i]<0. ) {
         std::cout << "(Event: " << evtNumber << ") Didn't find data for fibre N." << i << "!" << std::endl;
-        continue;
+        vetoEvent = true;
+        break;
       }
 
       if( cef3[i]>=4095. ) {
         std::cout << "(Event: " << evtNumber << ") Fibre N." << i << " in overflow!" << std::endl;
-        continue;
+        vetoEvent = true;
+        break;
       }
 
     }
 
+    if( vetoEvent ) continue;
 
 
     // FIRST GET POSITION FROM HODOSCOPE:
@@ -180,7 +187,7 @@ int main( int argc, char* argv[] ) {
     //   0      1
     //          
     //          
-    //   2      3
+    //   3      2
 
 
     float xySize = 25.; // in mm
@@ -190,8 +197,8 @@ int main( int argc, char* argv[] ) {
 
     float xPosW_0 = cef3_0_corr*(-position);
     float xPosW_1 = cef3_1_corr*(+position);
-    float xPosW_2 = cef3_2_corr*(-position);
-    float xPosW_3 = cef3_3_corr*(+position);
+    float xPosW_2 = cef3_2_corr*(+position);
+    float xPosW_3 = cef3_3_corr*(-position);
 
     float yPosW_0 = cef3_0_corr*(+position);
     float yPosW_1 = cef3_1_corr*(+position);
@@ -221,6 +228,12 @@ int main( int argc, char* argv[] ) {
 
     h2_xyPos->Fill( xPos, yPos );
 
+
+    // CORRELATIONS BETWEEN CALO AND HODO:
+
+    h2_correlation_xPos->Fill( xPos, xPos_hodo );
+    h2_correlation_yPos->Fill( yPos, yPos_hodo );
+
   }
 
 
@@ -249,8 +262,12 @@ int main( int argc, char* argv[] ) {
   h1_xPos_hodo->Write();
   h1_yPos_hodo->Write();
   h2_xyPos_hodo->Write();
+
+  h2_correlation_xPos->Write();
+  h2_correlation_yPos->Write();
   
   outfile->Close();
+  std::cout << "-> Histograms saved in: " << outfile->GetName() << std::endl;
 
   return 0;
 
