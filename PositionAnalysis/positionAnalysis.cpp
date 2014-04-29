@@ -8,8 +8,15 @@
 #include "TFile.h"
 #include "TTree.h"
 
+#include "fastDQM_CeF3_BTF.h"
 
-std::vector<float> getPedestals( const std::string& fileName );
+
+
+
+
+std::vector< std::pair<float, float> > getPedestals( const std::string& fileName );
+std::vector< std::pair<float, float> > getPedestalsHodo( const std::string type, const std::string fileName );
+float getMeanposHodo( std::vector<float> hodo, std::vector< std::pair<float, float> > pedestals);
 
 
 
@@ -32,14 +39,20 @@ int main( int argc, char* argv[] ) {
   TTree* tree = (TTree*)file->Get("eventRawData");
 
 
-  std::vector<float> pedestals = getPedestals("run_BTF_000002_ped_dqmPlots.root");
+  std::vector<std::pair<float, float> > pedestals = getPedestals("run_BTF_000002_ped_dqmPlots.root");
   std::cout << std::endl;
   std::cout << "-> Got pedestals: " << std::endl;
-  std::cout << " Channel 0: " << pedestals[0] << std::endl;
-  std::cout << " Channel 1: " << pedestals[1] << std::endl;
-  std::cout << " Channel 2: " << pedestals[2] << std::endl;
-  std::cout << " Channel 3: " << pedestals[3] << std::endl;
+  for( unsigned i=0; i<CEF3_CHANNELS; ++i )
+    std::cout << " Channel " << i << ": " << pedestals[i].first << std::endl;
   std::cout << std::endl;
+
+  std::vector<std::pair<float, float> > pedestals_hodox = getPedestalsHodo("X", "run_BTF_000002_ped_dqmPlots.root");
+  std::vector<std::pair<float, float> > pedestals_hodoy = getPedestalsHodo("Y", "run_BTF_000002_ped_dqmPlots.root");
+  std::cout << "-> Got Hodoscope pedestals: " << std::endl;
+  std::cout << std::endl;
+  for( unsigned i=0; i<HODOX_CHANNELS; ++i )
+    std::cout << "Channel " << i << ":  X: " << pedestals_hodox[i].first << " Y: " << pedestals_hodoy[i].first << std::endl;
+
 
   UInt_t evtNumber;
   tree->SetBranchAddress( "evtNumber", &evtNumber );
@@ -71,6 +84,9 @@ int main( int argc, char* argv[] ) {
   TH1D* h1_cef3_corr_3   = new TH1D("cef3_corr_3",   "", 4097, 0., 4097.);
   TH1D* h1_cef3_corr_tot = new TH1D("cef3_corr_tot", "", 200, 0., 4.*4097.);
   
+  TH1D* h1_xPos_hodo = new TH1D("xPos_hodo", "", nBins, -xMax, xMax);
+  TH1D* h1_yPos_hodo = new TH1D("yPos_hodo", "", nBins, -xMax, xMax);
+  TH2D* h2_xyPos_hodo = new TH2D("xyPos_hodo", "", nBins, -xMax, xMax, nBins, -xMax, xMax);
 
 
   int nentries = tree->GetEntries();
@@ -83,67 +99,83 @@ int main( int argc, char* argv[] ) {
 
 
     // CeF3 fibres are channels 2-5 of board 1
-    float cef3_0(-1.);
-    float cef3_1(-1.);
-    float cef3_2(-1.);
-    float cef3_3(-1.);
+    std::vector<float> cef3;
+    for( unsigned i=0; i<CEF3_CHANNELS; ++i ) cef3.push_back(-1.);
+
+    // hodoX
+    std::vector<float> hodox;
+    for( unsigned i=0; i<HODOX_CHANNELS; ++i ) hodox.push_back(-1.);
+
+    std::vector<float> hodoy;
+    for( unsigned i=0; i<HODOY_CHANNELS; ++i ) hodoy.push_back(-1.);
+
 
     for( unsigned i=0; i<40; ++i ) {
       int board  = adcBoard[i];
       int channel= adcChannel[i];
-      if( board!=1 ) continue;
-      if( channel==2 ) cef3_0 = adcData[i];
-      if( channel==3 ) cef3_1 = adcData[i];
-      if( channel==4 ) cef3_2 = adcData[i];
-      if( channel==5 ) cef3_3 = adcData[i];
+
+      if( board==1 ) {
+        if( channel==(CEF3_ADC_START_CHANNEL  ) )  cef3[0] = adcData[i];
+        if( channel==(CEF3_ADC_START_CHANNEL+1) )  cef3[1] = adcData[i];
+        if( channel==(CEF3_ADC_START_CHANNEL+2) )  cef3[2] = adcData[i];
+        if( channel==(CEF3_ADC_START_CHANNEL+3) )  cef3[3] = adcData[i];
+        if( channel==(HODOX_ADC_START_CHANNEL  ) ) hodox[0] = adcData[i];
+        if( channel==(HODOX_ADC_START_CHANNEL+1) ) hodox[1] = adcData[i];
+        if( channel==(HODOX_ADC_START_CHANNEL+2) ) hodox[2] = adcData[i];
+        if( channel==(HODOX_ADC_START_CHANNEL+3) ) hodox[3] = adcData[i];
+        if( channel==(HODOX_ADC_START_CHANNEL+4) ) hodox[4] = adcData[i];
+        if( channel==(HODOX_ADC_START_CHANNEL+5) ) hodox[5] = adcData[i];
+        if( channel==(HODOX_ADC_START_CHANNEL+6) ) hodox[6] = adcData[i];
+        if( channel==(HODOX_ADC_START_CHANNEL+7) ) hodox[7] = adcData[i];
+        if( channel==(HODOY_ADC_START_CHANNEL  ) ) hodoy[0] = adcData[i];
+        if( channel==(HODOY_ADC_START_CHANNEL+1) ) hodoy[1] = adcData[i];
+        if( channel==(HODOY_ADC_START_CHANNEL+2) ) hodoy[2] = adcData[i];
+        if( channel==(HODOY_ADC_START_CHANNEL+3) ) hodoy[3] = adcData[i];
+        if( channel==(HODOY_ADC_START_CHANNEL+4) ) hodoy[4] = adcData[i];
+        if( channel==(HODOY_ADC_START_CHANNEL+5) ) hodoy[5] = adcData[i];
+        if( channel==(HODOY_ADC_START_CHANNEL+6) ) hodoy[6] = adcData[i];
+        if( channel==(HODOY_ADC_START_CHANNEL+7) ) hodoy[7] = adcData[i];
+      }
     }
 
-    if( cef3_0<0. ) {
-      std::cout << "(Event: " << evtNumber << ") Didn't find data for fibre N.0!" << std::endl;
-      continue;
+
+    for( unsigned i=0; i<cef3.size(); ++i ) {
+
+      if( cef3[i]<0. ) {
+        std::cout << "(Event: " << evtNumber << ") Didn't find data for fibre N." << i << "!" << std::endl;
+        continue;
+      }
+
+      if( cef3[i]>=4095. ) {
+        std::cout << "(Event: " << evtNumber << ") Fibre N." << i << " in overflow!" << std::endl;
+        continue;
+      }
+
     }
 
-    if( cef3_1<0. ) {
-      std::cout << "(Event: " << evtNumber << ") Didn't find data for fibre N.1!" << std::endl;
-      continue;
-    }
 
-    if( cef3_2<0. ) {
-      std::cout << "(Event: " << evtNumber << ") Didn't find data for fibre N.2!" << std::endl;
-      continue;
-    }
 
-    if( cef3_3<0. ) {
-      std::cout << "(Event: " << evtNumber << ") Didn't find data for fibre N.3!" << std::endl;
-      continue;
-    }
+    // FIRST GET POSITION FROM HODOSCOPE:
 
-    if( cef3_0>=4095. ) {
-      std::cout << "(Event: " << evtNumber << ") Fibre N.0 in overflow!" << std::endl;
-      continue;
-    }
+    float xPos_hodo = getMeanposHodo(hodox, pedestals_hodox);
+    float yPos_hodo = getMeanposHodo(hodoy, pedestals_hodoy);
 
-    if( cef3_1>=4095. ) {
-      std::cout << "(Event: " << evtNumber << ") Fibre N.1 in overflow!" << std::endl;
-      continue;
-    }
+    h1_xPos_hodo->Fill(xPos_hodo);
+    h1_yPos_hodo->Fill(yPos_hodo);
 
-    if( cef3_2>=4095. ) {
-      std::cout << "(Event: " << evtNumber << ") Fibre N.2 in overflow!" << std::endl;
-      continue;
-    }
+    h2_xyPos_hodo->Fill(xPos_hodo, yPos_hodo);
 
-    if( cef3_3>=4095. ) {
-      std::cout << "(Event: " << evtNumber << ") Fibre N.3 in overflow!" << std::endl;
-      continue;
-    }
 
+
+
+    // THEN USE CALO DATA:
 
     // subtract pedestals:
-    float cef3_0_corr = cef3_0 - pedestals[0];
-    float cef3_1_corr = cef3_1 - pedestals[1];
-    float cef3_2_corr = cef3_2 - pedestals[2];
-    float cef3_3_corr = cef3_3 - pedestals[3];
+    float cef3_0_corr = ( cef3[0] > pedestals[0].first + 2.*pedestals[0].second ) ? (cef3[0] - pedestals[0].first) : 0.;
+    float cef3_1_corr = ( cef3[1] > pedestals[1].first + 2.*pedestals[1].second ) ? (cef3[1] - pedestals[1].first) : 0.;
+    float cef3_2_corr = ( cef3[2] > pedestals[2].first + 2.*pedestals[2].second ) ? (cef3[2] - pedestals[2].first) : 0.;
+    float cef3_3_corr = ( cef3[3] > pedestals[3].first + 2.*pedestals[3].second ) ? (cef3[3] - pedestals[3].first) : 0.;
+
 
     //   0      1
     //          
@@ -166,18 +198,16 @@ int main( int argc, char* argv[] ) {
     float yPosW_2 = cef3_2_corr*(-position);
     float yPosW_3 = cef3_3_corr*(-position);
 
-    float eTot = cef3_0+cef3_1+cef3_2+cef3_3;
+    float eTot = cef3[0]+cef3[1]+cef3[2]+cef3[3];
     float eTot_corr = cef3_0_corr+cef3_1_corr+cef3_2_corr+cef3_3_corr;
 
     float xPos = (xPosW_0+xPosW_1+xPosW_2+xPosW_3)/eTot_corr;
     float yPos = (yPosW_0+yPosW_1+yPosW_2+yPosW_3)/eTot_corr;
 
-    h1_cef3_0->Fill( cef3_0 );
-    h1_cef3_1->Fill( cef3_1 );
-    h1_cef3_2->Fill( cef3_2 );
-    h1_cef3_3->Fill( cef3_3 );
-std::cout << "eTot: " << eTot << std::endl;
-std::cout << "eTot_corr: " << eTot_corr << std::endl;
+    h1_cef3_0->Fill( cef3[0] );
+    h1_cef3_1->Fill( cef3[1] );
+    h1_cef3_2->Fill( cef3[2] );
+    h1_cef3_3->Fill( cef3[3] );
     h1_cef3_3->Fill( eTot );
 
     h1_cef3_corr_0->Fill( cef3_0_corr );
@@ -216,6 +246,9 @@ std::cout << "eTot_corr: " << eTot_corr << std::endl;
   h1_cef3_tot->Write();
   h1_cef3_corr_tot->Write();
   
+  h1_xPos_hodo->Write();
+  h1_yPos_hodo->Write();
+  h2_xyPos_hodo->Write();
   
   outfile->Close();
 
@@ -225,21 +258,54 @@ std::cout << "eTot_corr: " << eTot_corr << std::endl;
 
 
 
-std::vector<float> getPedestals( const std::string& fileName ) {
+std::vector< std::pair<float, float> > getPedestals( const std::string& fileName ) {
 
   TFile* file = TFile::Open(fileName.c_str());
 
-  TH1D* h1_ped0 = (TH1D*)file->Get("CEF3RAW_cef3RawSpectrum_0");
-  TH1D* h1_ped1 = (TH1D*)file->Get("CEF3RAW_cef3RawSpectrum_1");
-  TH1D* h1_ped2 = (TH1D*)file->Get("CEF3RAW_cef3RawSpectrum_2");
-  TH1D* h1_ped3 = (TH1D*)file->Get("CEF3RAW_cef3RawSpectrum_3");
-
-  std::vector<float> peds;
-  peds.push_back(h1_ped0->GetMean());
-  peds.push_back(h1_ped1->GetMean());
-  peds.push_back(h1_ped2->GetMean());
-  peds.push_back(h1_ped3->GetMean());
+  std::vector< std::pair<float, float> > peds;
+  for( int i=0; i<CEF3_CHANNELS; ++i ) {
+    TH1D* h1_ped = (TH1D*)file->Get(Form("CEF3RAW_cef3RawSpectrum_%d", i));
+    std::pair<float, float>  thispair;
+    thispair.first  = h1_ped->GetMean();
+    thispair.second = h1_ped->GetRMS();
+    peds.push_back(thispair);
+  }
 
   return peds;
   
+}
+
+
+
+float getMeanposHodo( std::vector<float> hodo, std::vector<std::pair<float,float> > pedestals ) {
+
+  float mean = 0.;
+  float eTot = 0.;
+  for( unsigned i=0; i<hodo.size(); ++i ) {
+    if( hodo[i] > (pedestals[i].first + 2.* pedestals[i].second) ) {
+      mean += (i-3.5);
+      eTot += 1.;
+    }
+  }
+
+  return mean/eTot;
+
+}
+
+
+std::vector< std::pair<float, float> > getPedestalsHodo( const std::string type, const std::string fileName ) {
+
+  TFile* file = TFile::Open(fileName.c_str());
+
+  std::vector< std::pair<float, float> > peds;
+  for( unsigned i=0; i<HODOX_CHANNELS; ++i ) {
+    TH1D* h1_ped = (TH1D*)file->Get(Form("HODO%sRAW_hodo%sRawSpectrum_%d", type.c_str(), type.c_str(), i));
+    std::pair<float, float>  thispair;
+    thispair.first  = h1_ped->GetMean();
+    thispair.second = h1_ped->GetRMS();
+    peds.push_back(thispair);
+  }
+
+  return peds;
+
 }
