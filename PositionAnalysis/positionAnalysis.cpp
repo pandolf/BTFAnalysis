@@ -51,15 +51,27 @@ int main( int argc, char* argv[] ) {
   tree->SetBranchAddress( "adcChannel", adcChannel );
 
 
-  TH1D* h1_xPos = new TH1D("xPos", "", 100, -100., 100.);
-  TH1D* h1_yPos = new TH1D("yPos", "", 100, -100., 100.);
+  int nBins = 500;
+  float xMax = 40.;
 
-  TH2D* h2_xyPos = new TH2D("xyPos", "", 100, -100., 100., 100, -100., 100.);
+  TH1D* h1_xPos = new TH1D("xPos", "", nBins, -xMax, xMax);
+  TH1D* h1_yPos = new TH1D("yPos", "", nBins, -xMax, xMax);
 
-  TH1D* h1_xPos_corr = new TH1D("xPos_corr", "", 100, -100., 100.);
-  TH1D* h1_yPos_corr = new TH1D("yPos_corr", "", 100, -100., 100.);
+  TH2D* h2_xyPos = new TH2D("xyPos", "", nBins, -xMax, xMax, nBins, -xMax, xMax);
 
-  TH2D* h2_xyPos_corr = new TH2D("xyPos_corr", "", 100, -100., 100., 100, -100., 100.);
+  TH1D* h1_cef3_0   = new TH1D("cef3_0",   "", 4097, 0., 4097.);
+  TH1D* h1_cef3_1   = new TH1D("cef3_1",   "", 4097, 0., 4097.);
+  TH1D* h1_cef3_2   = new TH1D("cef3_2",   "", 4097, 0., 4097.);
+  TH1D* h1_cef3_3   = new TH1D("cef3_3",   "", 4097, 0., 4097.);
+  TH1D* h1_cef3_tot = new TH1D("cef3_tot", "", 200, 0., 4.*4097.);
+  
+  TH1D* h1_cef3_corr_0   = new TH1D("cef3_corr_0",   "", 4097, 0., 4097.);
+  TH1D* h1_cef3_corr_1   = new TH1D("cef3_corr_1",   "", 4097, 0., 4097.);
+  TH1D* h1_cef3_corr_2   = new TH1D("cef3_corr_2",   "", 4097, 0., 4097.);
+  TH1D* h1_cef3_corr_3   = new TH1D("cef3_corr_3",   "", 4097, 0., 4097.);
+  TH1D* h1_cef3_corr_tot = new TH1D("cef3_corr_tot", "", 200, 0., 4.*4097.);
+  
+
 
   int nentries = tree->GetEntries();
 
@@ -106,6 +118,26 @@ int main( int argc, char* argv[] ) {
       continue;
     }
 
+    if( cef3_0>=4095. ) {
+      std::cout << "(Event: " << evtNumber << ") Fibre N.0 in overflow!" << std::endl;
+      continue;
+    }
+
+    if( cef3_1>=4095. ) {
+      std::cout << "(Event: " << evtNumber << ") Fibre N.1 in overflow!" << std::endl;
+      continue;
+    }
+
+    if( cef3_2>=4095. ) {
+      std::cout << "(Event: " << evtNumber << ") Fibre N.2 in overflow!" << std::endl;
+      continue;
+    }
+
+    if( cef3_3>=4095. ) {
+      std::cout << "(Event: " << evtNumber << ") Fibre N.3 in overflow!" << std::endl;
+      continue;
+    }
+
 
     // subtract pedestals:
     float cef3_0_corr = cef3_0 - pedestals[0];
@@ -118,19 +150,46 @@ int main( int argc, char* argv[] ) {
     //          
     //   2      3
 
-    int xPos = (cef3_0+cef3_2) - (cef3_1+cef3_3);
-    int yPos = (cef3_0+cef3_1) - (cef3_2+cef3_3);
 
-    int xPos_corr = (cef3_0_corr+cef3_2_corr) - (cef3_1_corr+cef3_3_corr);
-    int yPos_corr = (cef3_0_corr+cef3_1_corr) - (cef3_2_corr+cef3_3_corr);
+    float xySize = 25.; // in mm
+    float chamfer = 2.1; // in mm
+
+    float position = xySize/2. - chamfer/4.;
+
+    float xPosW_0 = cef3_0_corr*(-position);
+    float xPosW_1 = cef3_1_corr*(+position);
+    float xPosW_2 = cef3_2_corr*(-position);
+    float xPosW_3 = cef3_3_corr*(+position);
+
+    float yPosW_0 = cef3_0_corr*(+position);
+    float yPosW_1 = cef3_1_corr*(+position);
+    float yPosW_2 = cef3_2_corr*(-position);
+    float yPosW_3 = cef3_3_corr*(-position);
+
+    float eTot = cef3_0+cef3_1+cef3_2+cef3_3;
+    float eTot_corr = cef3_0_corr+cef3_1_corr+cef3_2_corr+cef3_3_corr;
+
+    float xPos = (xPosW_0+xPosW_1+xPosW_2+xPosW_3)/eTot_corr;
+    float yPos = (yPosW_0+yPosW_1+yPosW_2+yPosW_3)/eTot_corr;
+
+    h1_cef3_0->Fill( cef3_0 );
+    h1_cef3_1->Fill( cef3_1 );
+    h1_cef3_2->Fill( cef3_2 );
+    h1_cef3_3->Fill( cef3_3 );
+std::cout << "eTot: " << eTot << std::endl;
+std::cout << "eTot_corr: " << eTot_corr << std::endl;
+    h1_cef3_3->Fill( eTot );
+
+    h1_cef3_corr_0->Fill( cef3_0_corr );
+    h1_cef3_corr_1->Fill( cef3_1_corr );
+    h1_cef3_corr_2->Fill( cef3_2_corr );
+    h1_cef3_corr_3->Fill( cef3_3_corr );
+    h1_cef3_corr_tot->Fill( eTot_corr );
 
     h1_xPos->Fill( xPos );
     h1_yPos->Fill( yPos );
-    h1_xPos_corr->Fill( xPos_corr );
-    h1_yPos_corr->Fill( yPos_corr );
 
     h2_xyPos->Fill( xPos, yPos );
-    h2_xyPos_corr->Fill( xPos_corr, yPos_corr );
 
   }
 
@@ -143,11 +202,20 @@ int main( int argc, char* argv[] ) {
   h1_yPos->Write();
   
   h2_xyPos->Write();
+
+  h1_cef3_0->Write();
+  h1_cef3_1->Write();
+  h1_cef3_2->Write();
+  h1_cef3_3->Write();
   
-  h1_xPos_corr->Write();
-  h1_yPos_corr->Write();
+  h1_cef3_corr_0->Write();
+  h1_cef3_corr_1->Write();
+  h1_cef3_corr_2->Write();
+  h1_cef3_corr_3->Write();
   
-  h2_xyPos_corr->Write();
+  h1_cef3_tot->Write();
+  h1_cef3_corr_tot->Write();
+  
   
   outfile->Close();
 
