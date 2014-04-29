@@ -10,10 +10,12 @@
 #include "TStyle.h"
 #include "TPaveText.h"
 #include "TLegend.h"
+#include "TGraphErrors.h"
 
 
 
 TStyle* setStyle();
+TGraphErrors* get_xyCenter( TH2D* h2_xyPos );
 
 
 int main( int argc, char* argv[] ) {
@@ -51,6 +53,25 @@ int main( int argc, char* argv[] ) {
   h2_xyPos->SetMarkerColor(kRed);
   h2_xyPos->Draw("same");
 
+  TGraphErrors* gr_xyCenter      = get_xyCenter( h2_xyPos );
+  TGraphErrors* gr_xyCenter_hodo = get_xyCenter( h2_xyPos_hodo );
+
+  gr_xyCenter->SetMarkerColor(kRed+3);
+  gr_xyCenter->SetMarkerStyle(20);
+  gr_xyCenter->SetMarkerSize(1.);
+
+  gr_xyCenter_hodo->SetMarkerColor(kBlack);
+  gr_xyCenter_hodo->SetMarkerStyle(20);
+  gr_xyCenter_hodo->SetMarkerSize(1.);
+
+
+  TLegend* legend = new TLegend( 0.75, 0.21, 0.9, 0.35 );
+  legend->SetFillColor(0);
+  legend->SetTextSize(0.038);
+  legend->AddEntry( gr_xyCenter, "CeF3", "P" );
+  legend->AddEntry( gr_xyCenter_hodo, "Hodo", "P" );
+  legend->Draw("same");
+
   TPaveText* label_top = new TPaveText(0.4,0.953,0.975,0.975, "brNDC");
   label_top->SetFillColor(kWhite);
   label_top->SetTextSize(0.038);
@@ -63,9 +84,12 @@ int main( int argc, char* argv[] ) {
   label_run->SetFillColor(kWhite);
   label_run->SetTextSize(0.033);
   label_run->SetTextAlign(31); // align right
-  label_run->SetTextFont(62);
+  label_run->SetTextFont(42);
   label_run->AddText(Form("Run %s", runName.c_str()));
   label_run->Draw("same");
+
+  gr_xyCenter->Draw("p same");
+  gr_xyCenter_hodo->Draw("p same");
 
   c1->SaveAs("xyPos.eps");
   c1->SaveAs("xyPos.png");
@@ -165,3 +189,18 @@ TStyle* setStyle() {
 }
 
 
+TGraphErrors* get_xyCenter( TH2D* h2_xyPos ) {
+
+  float x     = h2_xyPos->ProjectionX()->GetMean();
+  float x_err = h2_xyPos->ProjectionX()->GetMeanError();
+
+  float y     = h2_xyPos->ProjectionY()->GetMean();
+  float y_err = h2_xyPos->ProjectionY()->GetMeanError();
+
+  TGraphErrors* gr_point = new TGraphErrors(0);
+  gr_point->SetPoint( 0, x, y );
+  gr_point->SetPointError( 0, x_err, y_err );
+
+  return gr_point;
+
+}
