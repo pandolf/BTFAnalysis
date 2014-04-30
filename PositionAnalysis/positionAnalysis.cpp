@@ -19,7 +19,7 @@ std::vector< std::pair<float, float> > getPedestalsHodo( const std::string type,
 std::vector<float> subtractPedestals( std::vector<float> raw, std::vector< std::pair<float, float> > pedestals, float nSigma );
 float sumVector( std::vector<float> v );
 bool checkVector( std::vector<float> v, float theMax=4095. );
-float getMeanposHodo( std::vector<float> hodo, std::vector< std::pair<float, float> > pedestals);
+float getMeanposHodo( std::vector<float> hodo, std::vector< std::pair<float, float> > pedestals, float nSigma);
 
 
 
@@ -42,26 +42,29 @@ int main( int argc, char* argv[] ) {
   TTree* tree = (TTree*)file->Get("eventRawData");
 
 
-  std::vector<std::pair<float, float> > pedestals = getPedestals("run_BTF_000002_ped_dqmPlots.root", "CEF3RAW_cef3RawSpectrum", CEF3_CHANNELS );
+  //std::string pedestalFileName = "run_BTF_91_20140430-015540_pedestal_dqmPlots.root";
+  std::string pedestalFileName = "run_BTF_000002_ped_dqmPlots.root";
+
+  std::vector<std::pair<float, float> > pedestals = getPedestals(pedestalFileName, "CEF3RAW_cef3RawSpectrum", CEF3_CHANNELS );
   std::cout << std::endl;
   std::cout << "-> Got pedestals of CeF3: " << std::endl;
   for( unsigned i=0; i<CEF3_CHANNELS; ++i )
     std::cout << " CeF3 Channel " << i << ": " << pedestals[i].first << " (+- " << pedestals[i].second << ")" << std::endl;
   std::cout << std::endl;
 
-  std::vector<std::pair<float, float> > pedestals_bgo = getPedestals("run_BTF_000002_ped_dqmPlots.root", "BGORAW_bgoRawSpectrum", BGO_CHANNELS );
+  std::vector<std::pair<float, float> > pedestals_bgo = getPedestals(pedestalFileName, "BGORAW_bgoRawSpectrum", BGO_CHANNELS );
   std::cout << std::endl;
   std::cout << "-> Got pedestals of BGO: " << std::endl;
   for( unsigned i=0; i<BGO_CHANNELS; ++i )
     std::cout << " BGO Channel " << i << ": " << pedestals_bgo[i].first << " (+- " << pedestals_bgo[i].second << ")" << std::endl;
   std::cout << std::endl;
 
-  std::vector<std::pair<float, float> > pedestals_hodox = getPedestalsHodo("X", "run_BTF_000002_ped_dqmPlots.root");
-  std::vector<std::pair<float, float> > pedestals_hodoy = getPedestalsHodo("Y", "run_BTF_000002_ped_dqmPlots.root");
+  std::vector<std::pair<float, float> > pedestals_hodox = getPedestalsHodo("X", pedestalFileName);
+  std::vector<std::pair<float, float> > pedestals_hodoy = getPedestalsHodo("Y", pedestalFileName);
   std::cout << "-> Got Hodoscope pedestals: " << std::endl;
   std::cout << std::endl;
   for( unsigned i=0; i<HODOX_CHANNELS; ++i )
-    std::cout << "Channel " << i << ":  X: " << pedestals_hodox[i].first << " Y: " << pedestals_hodoy[i].first << std::endl;
+    std::cout << "Channel " << i << ":  X: " << pedestals_hodox[i].first << " (+- " << pedestals_hodox[i].second << ") Y: " << pedestals_hodoy[i].first << " (+- " << pedestals_hodoy[i].second << ")" << std::endl;
 
 
   UInt_t evtNumber;
@@ -127,7 +130,7 @@ int main( int argc, char* argv[] ) {
 
     tree->GetEntry(iEntry);
 
-    if( iEntry % 100 == 0 ) std::cout << "Entry: " << iEntry << " / " << nentries << std::endl;
+    if( iEntry % 1000 == 0 ) std::cout << "Entry: " << iEntry << " / " << nentries << std::endl;
 
 
     // CeF3 fibres
@@ -196,13 +199,20 @@ int main( int argc, char* argv[] ) {
 
     // FIRST GET POSITION FROM HODOSCOPE:
 
-    float xPos_hodo = getMeanposHodo(hodox, pedestals_hodox);
-    float yPos_hodo = getMeanposHodo(hodoy, pedestals_hodoy);
+    bool hodox_ok = checkVector(hodox, 99999.);
+    bool hodoy_ok = checkVector(hodoy, 99999.);
 
-    h1_xPos_hodo->Fill(xPos_hodo);
-    h1_yPos_hodo->Fill(yPos_hodo);
+    float nSigma_hodo = 4.;
+    float xPos_hodo = getMeanposHodo(hodox, pedestals_hodox, nSigma_hodo);
+    float yPos_hodo = getMeanposHodo(hodoy, pedestals_hodoy, nSigma_hodo);
 
-    h2_xyPos_hodo->Fill(xPos_hodo, yPos_hodo);
+    if( hodox_ok )
+      h1_xPos_hodo->Fill(xPos_hodo);
+    if( hodoy_ok )
+      h1_yPos_hodo->Fill(yPos_hodo);
+
+    if( hodox_ok && hodoy_ok ) 
+      h2_xyPos_hodo->Fill(xPos_hodo, yPos_hodo);
 
 
 
@@ -213,6 +223,26 @@ int main( int argc, char* argv[] ) {
     float yPos_bgo;
 
     if( bgo_ok && bgo_corr_ok ) {
+
+
+      // first: BGO precalibration:
+
+      std::vector<float> bgo_precalibration;
+      bgo_precalibration.push_back(193.7);
+      bgo_precalibration.push_back(305.0);
+      bgo_precalibration.push_back(263.8);
+      bgo_precalibration.push_back(296.2);
+      bgo_precalibration.push_back(201.6);
+      bgo_precalibration.push_back(194.9);
+      bgo_precalibration.push_back(229.1);
+      bgo_precalibration.push_back(241.1);
+
+      float bgoCalibrationAverage = sumVector(bgo_precalibration)/bgo_precalibration.size();
+
+      for(unsigned i=0; i<bgo_precalibration.size(); ++i ) {
+        bgo_precalibration[i] /= bgoCalibrationAverage;
+        bgo_corr[i] *= bgo_precalibration[i]; //correct
+      }
 
       float eTot_bgo_corr  = sumVector(bgo_corr);
 
@@ -226,11 +256,17 @@ int main( int argc, char* argv[] ) {
       h1_bgo_corr_7->Fill( bgo_corr[7] );
       h1_bgo_corr_tot->Fill( eTot_bgo_corr );
 
+
+
+      // then proceed to compute position:
+
       //   0  1  2
       //   3     4
       //   5  6  7
 
-      float position_bgo = 1.5*xySize;
+
+      float position_bgo = xySize; // in mm
+      //float position_bgo = 22.; // in mm
       
       std::vector<float> xPosW_bgo;
       xPosW_bgo.push_back(bgo_corr[0]*(-position_bgo));
@@ -409,13 +445,13 @@ std::vector< std::pair<float, float> > getPedestals( const std::string& fileName
 
 
 
-float getMeanposHodo( std::vector<float> hodo, std::vector<std::pair<float,float> > pedestals ) {
+float getMeanposHodo( std::vector<float> hodo, std::vector<std::pair<float,float> > pedestals, float nSigma ) {
 
   float mean = 0.;
   float eTot = 0.;
   for( unsigned i=0; i<hodo.size(); ++i ) {
-    if( hodo[i] > (pedestals[i].first + 2.* pedestals[i].second) ) {
-      mean += (i-3.5);
+    if( hodo[i] > (pedestals[i].first + nSigma* pedestals[i].second) ) {
+      mean += -(i-3.5);
       eTot += 1.;
     }
   }
