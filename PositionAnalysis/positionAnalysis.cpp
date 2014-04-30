@@ -164,6 +164,8 @@ int main( int argc, char* argv[] ) {
 
 
   for( unsigned iEntry=0; iEntry<nentries; ++iEntry ) {
+    nHodoFibersX=0;
+    nHodoFibersY=0;
 
     tree->GetEntry(iEntry);
 
