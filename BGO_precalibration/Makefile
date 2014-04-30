@@ -14,7 +14,7 @@ EXTRALIBS := -L$(ROOTSYS)/lib  -lHtml -lMathCore -lGenVector -lMinuit -lEG -lRoo
 
 
 bgoCalibration: bgoCalibration.cpp
-	$(CC) -Wall -Wl,--no-as-needed $(INCLUDES) -o bgoCalibration bgoCalibration.cpp $(ROOTFLAG) $(EXTRALIBS)
+	$(CC) -Wall $(INCLUDES) -o bgoCalibration bgoCalibration.cpp $(ROOTFLAG) $(EXTRALIBS)
 
 
 
