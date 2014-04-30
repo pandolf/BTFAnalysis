@@ -23,6 +23,8 @@ TStyle* setStyle();
 TGraphErrors* get_xyCenter( TH2D* h2_xyPos );
 void drawSinglePositionPlot( const std::string& outputdir, TFile* file, const std::string& runName, const std::string& suffix );
 void drawSinglePlot( const std::string& outputdir, const std::string& saveName, TFile* file, const std::string& name, const std::string& axisName, int nChannels, float xMin=0, float xMax=4095, int rebin=1, bool plotLog=false );
+//void fitHodoWithBeam( TH1D* h1, float r, float& pos, float& pos_err );
+void fitHodoWithBeam( const std::string& outputdir, const std::string& suffix, TH1D* h1, float r, float& pos, float& pos_err );
 TPaveText* getLabelTop();
 TPaveText* getLabelRun( const std::string& runName, bool top=true );
 
@@ -125,15 +127,25 @@ void drawSinglePositionPlot( const std::string& outputdir, TFile* file, const st
   gr_xyCenter_bgo->SetMarkerSize(1.6);
 
 
+  // try to fit the hodo points with the expected beam size
+  float xPos_hodo_fit, xPos_hodo_fit_err;
+  float yPos_hodo_fit, yPos_hodo_fit_err;
+  fitHodoWithBeam( outputdir, "X"+suffix, h2_xyPos_hodo->ProjectionX(), beamRX, xPos_hodo_fit, xPos_hodo_fit_err );
+  fitHodoWithBeam( outputdir, "Y"+suffix, h2_xyPos_hodo->ProjectionY(), beamRY, yPos_hodo_fit, yPos_hodo_fit_err );
+  //TFile* file_prova = TFile::Open("prova.root", "recreate");
+  //file_prova->cd();
+  //h2_xyPos_hodo->Write();
+  //h2_xyPos_hodo->Write();
+  //file_prova->Close();
+  //exit(11);
+
+  TGraphErrors* gr_xyCenter_hodo_fit = new TGraphErrors(0);
+  gr_xyCenter_hodo_fit->SetPoint(0, xPos_hodo_fit, yPos_hodo_fit);
+  gr_xyCenter_hodo_fit->SetPointError(0, xPos_hodo_fit_err, yPos_hodo_fit_err);
+  gr_xyCenter_hodo_fit->SetMarkerStyle(24);
+  gr_xyCenter_hodo_fit->SetMarkerSize(1.6);
 
 
-  TLegend* legend = new TLegend( 0.75, 0.21, 0.9, 0.39 );
-  legend->SetFillColor(0);
-  legend->SetTextSize(0.038);
-  legend->AddEntry( gr_xyCenter, "CeF3", "P" );
-  legend->AddEntry( gr_xyCenter_bgo, "BGO", "P" );
-  legend->AddEntry( gr_xyCenter_hodo, "Hodo", "P" );
-  legend->Draw("same");
 
 
   TGraph* gr_beamPos = new TGraph(0);
@@ -172,6 +184,14 @@ void drawSinglePositionPlot( const std::string& outputdir, TFile* file, const st
   line_y2->Draw("same");
 
 
+  TLegend* legend = new TLegend( 0.75, 0.21, 0.9, 0.39 );
+  legend->SetFillColor(0);
+  legend->SetTextSize(0.038);
+  legend->AddEntry( gr_xyCenter, "CeF3", "P" );
+  legend->AddEntry( gr_xyCenter_bgo, "BGO", "P" );
+  legend->AddEntry( gr_xyCenter_hodo, "Hodo", "P" );
+  legend->Draw("same");
+
 
   h2_xyPos_hodo->SetMarkerColor(14);
   h2_xyPos->SetMarkerColor(46);
@@ -203,6 +223,7 @@ void drawSinglePositionPlot( const std::string& outputdir, TFile* file, const st
   h2_xyPos->Draw("same");
   h2_xyPos_hodo->Draw("same");
 
+
   TEllipse* beamPos = new TEllipse( beamX, beamY, beamRX, beamRY );
   beamPos->SetLineColor(kBlack);
   beamPos->SetFillStyle(0);
@@ -211,6 +232,7 @@ void drawSinglePositionPlot( const std::string& outputdir, TFile* file, const st
   gr_xyCenter_hodo->Draw("p same");
   gr_xyCenter_bgo->Draw("p same");
   gr_xyCenter->Draw("p same");
+  gr_xyCenter_hodo_fit->Draw("p same");
 
 
   c1->SaveAs(Form("%s/xyPos%s.eps", outputdir.c_str(), suffix.c_str()) );
@@ -224,17 +246,17 @@ void drawSinglePositionPlot( const std::string& outputdir, TFile* file, const st
   h2_axes_zoom->SetYTitle("Y Position [mm]");
   h2_axes_zoom->Draw();
 
-  legend->Draw("same");
   drawBeam = ((fabs(beamX)<xMax) && (fabs(beamY)<xMax));
   if( drawBeam )
     legend2->Draw("same");
   label_top->Draw("same");
   label_run->Draw("same");
-
+  legend->Draw("same");
 
   h2_xyPos_bgo->Draw("same");
   h2_xyPos_hodo->Draw("same");
   h2_xyPos->Draw("same");
+
 
   lineHodo_x1->Draw("same");
   lineHodo_x2->Draw("same");
@@ -246,6 +268,7 @@ void drawSinglePositionPlot( const std::string& outputdir, TFile* file, const st
   gr_xyCenter_hodo->Draw("p same");
   gr_xyCenter_bgo->Draw("p same");
   gr_xyCenter->Draw("p same");
+  gr_xyCenter_hodo_fit->Draw("p same");
 
 
   c1->SaveAs(Form("%s/xyPos%s_zoom.eps", outputdir.c_str(), suffix.c_str()) );
@@ -506,5 +529,43 @@ TPaveText* getLabelRun( const std::string& runName, bool top ) {
   label_run->AddText(Form("Run %s", runName.c_str()));
 
   return label_run;
+
+}
+
+
+
+void fitHodoWithBeam( const std::string& outputdir, const std::string& suffix, TH1D* h1, float r, float& pos, float& pos_err ) {
+
+  h1->Rebin(5);
+  float nentries =  h1->GetEntries();
+
+  TF1* f1_gaus = new TF1( "gaus_hodo", "gaus" );
+  f1_gaus->SetRange(-4., 4.);
+  //f1_gaus->SetParameter(0, nentries);
+  f1_gaus->FixParameter(0, nentries);
+  f1_gaus->SetParameter(1, 0.);
+
+  //f1_gaus->SetParLimits(0, 0.01*nentries, nentries);
+  f1_gaus->SetParLimits(1, -40., 40.);
+  f1_gaus->FixParameter(2, r );
+
+  h1->Fit(f1_gaus, "RNL" );
+  TCanvas* c1 = new TCanvas("c1_temp", "", 600, 600);
+  c1->cd();
+  h1->SetLineColor(kRed);
+  h1->SetLineWidth(2);
+  h1->SetXTitle("Position [mm]");
+  h1->SetYTitle("Hits");
+  h1->Draw("");
+  f1_gaus->SetRange(-40., 40.);
+  f1_gaus->Draw("same");
+  c1->SaveAs(Form("%s/tmpFit%s.eps", outputdir.c_str(), suffix.c_str()));
+  c1->SaveAs(Form("%s/tmpFit%s.png", outputdir.c_str(), suffix.c_str()));
+  delete c1;
+
+  pos = f1_gaus->GetParameter(1);
+  pos_err = f1_gaus->GetParameter(2);
+
+  delete f1_gaus;
 
 }
