@@ -23,6 +23,5 @@ drawPositionAnalysis: drawPositionAnalysis.cpp
 
 
 clean:
-#	rm *.o
 	rm positionAnalysis
 	rm drawPositionAnalysis 
