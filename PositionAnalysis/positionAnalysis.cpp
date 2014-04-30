@@ -44,6 +44,7 @@ int main( int argc, char* argv[] ) {
 
   //std::string pedestalFileName = "run_BTF_91_20140430-015540_pedestal_dqmPlots.root";
   std::string pedestalFileName = "run_BTF_000002_ped_dqmPlots.root";
+  std::cout << "-> Using pedestal file: " << pedestalFileName << std::endl;
 
   std::vector<std::pair<float, float> > pedestals = getPedestals(pedestalFileName, "CEF3RAW_cef3RawSpectrum", CEF3_CHANNELS );
   std::cout << std::endl;
@@ -66,6 +67,7 @@ int main( int argc, char* argv[] ) {
   for( unsigned i=0; i<HODOX_CHANNELS; ++i )
     std::cout << "Channel " << i << ":  X: " << pedestals_hodox[i].first << " (+- " << pedestals_hodox[i].second << ") Y: " << pedestals_hodoy[i].first << " (+- " << pedestals_hodoy[i].second << ")" << std::endl;
 
+  std::cout << std::endl << std::endl;
 
   UInt_t evtNumber;
   tree->SetBranchAddress( "evtNumber", &evtNumber );
@@ -117,11 +119,14 @@ int main( int argc, char* argv[] ) {
 
 
 
-  TH2D* h2_correlation_hodo_xPos = new TH2D("correlation_hodo_xPos", "", nBins, -xySize/2., xySize/2.,  nBins, -xySize/2., xySize/2.);
-  TH2D* h2_correlation_hodo_yPos = new TH2D("correlation_hodo_yPos", "", nBins, -xySize/2., xySize/2.,  nBins, -xySize/2., xySize/2.);
+  TH2D* h2_correlation_cef3_hodo_xPos = new TH2D("correlation_cef3_hodo_xPos", "", 100, -xySize/2., xySize/2.,  100, -xySize/2., xySize/2.);
+  TH2D* h2_correlation_cef3_hodo_yPos = new TH2D("correlation_cef3_hodo_yPos", "", 100, -xySize/2., xySize/2.,  100, -xySize/2., xySize/2.);
 
-  TH2D* h2_correlation_bgo_xPos = new TH2D("correlation_bgo_xPos", "", nBins, -xySize/2., xySize/2.,  nBins, -xySize/2., xySize/2.);
-  TH2D* h2_correlation_bgo_yPos = new TH2D("correlation_bgo_yPos", "", nBins, -xySize/2., xySize/2.,  nBins, -xySize/2., xySize/2.);
+  TH2D* h2_correlation_cef3_bgo_xPos = new TH2D("correlation_cef3_bgo_xPos", "", 100, -xySize/2., xySize/2.,  100, -xySize/2., xySize/2.);
+  TH2D* h2_correlation_cef3_bgo_yPos = new TH2D("correlation_cef3_bgo_yPos", "", 100, -xySize/2., xySize/2.,  100, -xySize/2., xySize/2.);
+
+  TH2D* h2_correlation_hodo_bgo_xPos = new TH2D("correlation_hodo_bgo_xPos", "", 100, -xySize/2., xySize/2.,  100, -xySize/2., xySize/2.);
+  TH2D* h2_correlation_hodo_bgo_yPos = new TH2D("correlation_hodo_bgo_yPos", "", 100, -xySize/2., xySize/2.,  100, -xySize/2., xySize/2.);
 
 
   int nentries = tree->GetEntries();
@@ -188,8 +193,8 @@ int main( int argc, char* argv[] ) {
     }
 
 
-    std::vector<float>  bgo_corr = subtractPedestals( bgo , pedestals_bgo, 2. );
-    std::vector<float> cef3_corr = subtractPedestals( cef3, pedestals,     2. );
+    std::vector<float>  bgo_corr = subtractPedestals( bgo , pedestals_bgo, 4. );
+    std::vector<float> cef3_corr = subtractPedestals( cef3, pedestals,     4. );
 
 
     bool cef3_ok = checkVector(cef3);
@@ -294,6 +299,9 @@ int main( int argc, char* argv[] ) {
       h1_xPos_bgo->Fill( xPos_bgo );
       h1_yPos_bgo->Fill( yPos_bgo );
       h2_xyPos_bgo->Fill( xPos_bgo, yPos_bgo );
+
+      h2_correlation_hodo_bgo_xPos->Fill( xPos_hodo, xPos_bgo );
+      h2_correlation_hodo_bgo_yPos->Fill( yPos_hodo, yPos_bgo );
       
     }  // if bgo ok
 
@@ -309,7 +317,7 @@ int main( int argc, char* argv[] ) {
       h1_cef3_1->Fill( cef3[1] );
       h1_cef3_2->Fill( cef3[2] );
       h1_cef3_3->Fill( cef3[3] );
-      h1_cef3_3->Fill( eTot );
+      h1_cef3_tot->Fill( eTot );
 
       h1_cef3_corr_0->Fill( cef3_corr[0] );
       h1_cef3_corr_1->Fill( cef3_corr[1] );
@@ -354,12 +362,12 @@ int main( int argc, char* argv[] ) {
 
         // CORRELATIONS BETWEEN CALO AND HODO:
   
-        h2_correlation_hodo_xPos->Fill( xPos, xPos_hodo );
-        h2_correlation_hodo_yPos->Fill( yPos, yPos_hodo );
+        h2_correlation_cef3_hodo_xPos->Fill( xPos, xPos_hodo );
+        h2_correlation_cef3_hodo_yPos->Fill( yPos, yPos_hodo );
 
         if( bgo_ok && bgo_corr_ok ) {
-          h2_correlation_bgo_xPos->Fill( xPos, xPos_bgo );
-          h2_correlation_bgo_yPos->Fill( yPos, yPos_bgo );
+          h2_correlation_cef3_bgo_xPos->Fill( xPos, xPos_bgo );
+          h2_correlation_cef3_bgo_yPos->Fill( yPos, yPos_bgo );
         }
 
       } // if cef3_ok
@@ -401,11 +409,14 @@ int main( int argc, char* argv[] ) {
   h1_yPos_hodo->Write();
   h2_xyPos_hodo->Write();
 
-  h2_correlation_hodo_xPos->Write();
-  h2_correlation_hodo_yPos->Write();
+  h2_correlation_cef3_hodo_xPos->Write();
+  h2_correlation_cef3_hodo_yPos->Write();
 
-  h2_correlation_bgo_xPos->Write();
-  h2_correlation_bgo_yPos->Write();
+  h2_correlation_cef3_bgo_xPos->Write();
+  h2_correlation_cef3_bgo_yPos->Write();
+
+  h2_correlation_hodo_bgo_xPos->Write();
+  h2_correlation_hodo_bgo_yPos->Write();
 
   h1_bgo_corr_0->Write();
   h1_bgo_corr_1->Write();
