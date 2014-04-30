@@ -85,27 +85,27 @@ int main( int argc, char* argv[] ) {
   TH1D* h1_yPos = new TH1D("yPos", "", nBins, -xMax, xMax);
   TH2D* h2_xyPos = new TH2D("xyPos", "", nBins, -xMax, xMax, nBins, -xMax, xMax);
 
-  TH1D* h1_cef3_0   = new TH1D("cef3_0",   "", 4097, 0., 4097.);
-  TH1D* h1_cef3_1   = new TH1D("cef3_1",   "", 4097, 0., 4097.);
-  TH1D* h1_cef3_2   = new TH1D("cef3_2",   "", 4097, 0., 4097.);
-  TH1D* h1_cef3_3   = new TH1D("cef3_3",   "", 4097, 0., 4097.);
-  TH1D* h1_cef3_tot = new TH1D("cef3_tot", "", 200, 0., 4.*4097.);
+  TH1D* h1_cef3_0   = new TH1D("cef3_0",   "", 5000, 0., 5000.);
+  TH1D* h1_cef3_1   = new TH1D("cef3_1",   "", 5000, 0., 5000.);
+  TH1D* h1_cef3_2   = new TH1D("cef3_2",   "", 5000, 0., 5000.);
+  TH1D* h1_cef3_3   = new TH1D("cef3_3",   "", 5000, 0., 5000.);
+  TH1D* h1_cef3_tot = new TH1D("cef3_tot", "", 200, 0., 4.*5000.);
   
-  TH1D* h1_cef3_corr_0   = new TH1D("cef3_corr_0",   "", 4097, 0., 4097.);
-  TH1D* h1_cef3_corr_1   = new TH1D("cef3_corr_1",   "", 4097, 0., 4097.);
-  TH1D* h1_cef3_corr_2   = new TH1D("cef3_corr_2",   "", 4097, 0., 4097.);
-  TH1D* h1_cef3_corr_3   = new TH1D("cef3_corr_3",   "", 4097, 0., 4097.);
-  TH1D* h1_cef3_corr_tot = new TH1D("cef3_corr_tot", "", 200, 0., 4.*4097.);
+  TH1D* h1_cef3_corr_0   = new TH1D("cef3_corr_0",   "", 5000, 0., 5000.);
+  TH1D* h1_cef3_corr_1   = new TH1D("cef3_corr_1",   "", 5000, 0., 5000.);
+  TH1D* h1_cef3_corr_2   = new TH1D("cef3_corr_2",   "", 5000, 0., 5000.);
+  TH1D* h1_cef3_corr_3   = new TH1D("cef3_corr_3",   "", 5000, 0., 5000.);
+  TH1D* h1_cef3_corr_tot = new TH1D("cef3_corr_tot", "", 200, 0., 4.*5000.);
 
-  TH1D* h1_bgo_corr_0   = new TH1D("bgo_corr_0",   "", 4097, 0., 4097.);
-  TH1D* h1_bgo_corr_1   = new TH1D("bgo_corr_1",   "", 4097, 0., 4097.);
-  TH1D* h1_bgo_corr_2   = new TH1D("bgo_corr_2",   "", 4097, 0., 4097.);
-  TH1D* h1_bgo_corr_3   = new TH1D("bgo_corr_3",   "", 4097, 0., 4097.);
-  TH1D* h1_bgo_corr_4   = new TH1D("bgo_corr_4",   "", 4097, 0., 4097.);
-  TH1D* h1_bgo_corr_5   = new TH1D("bgo_corr_5",   "", 4097, 0., 4097.);
-  TH1D* h1_bgo_corr_6   = new TH1D("bgo_corr_6",   "", 4097, 0., 4097.);
-  TH1D* h1_bgo_corr_7   = new TH1D("bgo_corr_7",   "", 4097, 0., 4097.);
-  TH1D* h1_bgo_corr_tot   = new TH1D("bgo_corr_tot",   "", 4097, 0., 8.*4097.);
+  TH1D* h1_bgo_corr_0   = new TH1D("bgo_corr_0",   "", 5000, 0., 5000.);
+  TH1D* h1_bgo_corr_1   = new TH1D("bgo_corr_1",   "", 5000, 0., 5000.);
+  TH1D* h1_bgo_corr_2   = new TH1D("bgo_corr_2",   "", 5000, 0., 5000.);
+  TH1D* h1_bgo_corr_3   = new TH1D("bgo_corr_3",   "", 5000, 0., 5000.);
+  TH1D* h1_bgo_corr_4   = new TH1D("bgo_corr_4",   "", 5000, 0., 5000.);
+  TH1D* h1_bgo_corr_5   = new TH1D("bgo_corr_5",   "", 5000, 0., 5000.);
+  TH1D* h1_bgo_corr_6   = new TH1D("bgo_corr_6",   "", 5000, 0., 5000.);
+  TH1D* h1_bgo_corr_7   = new TH1D("bgo_corr_7",   "", 5000, 0., 5000.);
+  TH1D* h1_bgo_corr_tot   = new TH1D("bgo_corr_tot",   "", 5000, 0., 8.*5000.);
 
   TH1D* h1_xPos_bgo = new TH1D("xPos_bgo", "", nBins, -xMax, xMax);
   TH1D* h1_yPos_bgo = new TH1D("yPos_bgo", "", nBins, -xMax, xMax);
