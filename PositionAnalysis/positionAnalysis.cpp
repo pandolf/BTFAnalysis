@@ -332,7 +332,7 @@ int main( int argc, char* argv[] ) {
 
       for(unsigned i=0; i<bgo_precalibration.size(); ++i ) {
         bgo_precalibration[i] /= bgoCalibrationAverage;
-        bgo_corr[i] *= bgo_precalibration[i]; //correct
+        bgo_corr[i] /= bgo_precalibration[i]; //correct
       }
 
       float eTot_bgo_corr  = sumVector(bgo_corr);
@@ -409,6 +409,22 @@ int main( int argc, char* argv[] ) {
 
       float eTot      = sumVector(cef3);
       float eTot_corr = sumVector(cef3_corr);
+
+      // intercalibration:
+
+      std::vector<float> cef3_calibration;
+      cef3_calibration.push_back(848.317);
+      cef3_calibration.push_back(995.703);
+      cef3_calibration.push_back(891.56 );
+      cef3_calibration.push_back(928.443);
+
+      float cef3CalibrationAverage = sumVector(cef3_calibration)/cef3_calibration.size();
+
+      for(unsigned i=0; i<cef3_calibration.size(); ++i ) {
+        cef3_calibration[i] /= cef3CalibrationAverage;
+        cef3_corr[i] /= cef3_calibration[i]; //correct
+      }
+
 
       h1_cef3_0->Fill( cef3[0] );
       h1_cef3_1->Fill( cef3[1] );
