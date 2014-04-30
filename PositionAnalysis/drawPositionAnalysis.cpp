@@ -46,7 +46,8 @@ int main( int argc, char* argv[] ) {
   // manually set beam nominal position for some known runs:
   float beamX = -999.;
   float beamY = -999.;
-  float beamR = 4.;
+  float beamRX = 4.;
+  float beamRY = 2.;
   if( runName == "BTF_94_20140430-073300_beam" ) {
     beamX = -3.;
     beamY = +3.;
@@ -59,7 +60,7 @@ int main( int argc, char* argv[] ) {
   }
 
   bool drawBeam = ((beamX>-999.) && (beamY>-999.));
-  bool beamInsideHodo = ((fabs(beamX)<4.) && (fabs(beamY)<4.));
+  //bool beamInsideHodo = ((fabs(beamX)<4.) && (fabs(beamY)<4.));
 
 
   TCanvas* c1 = new TCanvas("c1", "", 600, 600);
@@ -186,7 +187,7 @@ int main( int argc, char* argv[] ) {
   h2_xyPos->Draw("same");
   h2_xyPos_hodo->Draw("same");
 
-  TEllipse* beamPos = new TEllipse( beamX, beamY, beamR, beamR );
+  TEllipse* beamPos = new TEllipse( beamX, beamY, beamRX, beamRY );
   beamPos->SetLineColor(kBlack);
   beamPos->SetFillStyle(0);
   beamPos->Draw("same"); 
