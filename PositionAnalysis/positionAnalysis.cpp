@@ -14,8 +14,7 @@
 
 
 
-std::vector< std::pair<float, float> > getPedestals( const std::string& fileName, const std::string& name, int n );
-std::vector< std::pair<float, float> > getPedestalsHodo( const std::string type, const std::string fileName );
+std::vector< std::pair<float, float> > getPedestals( const std::string& type, const std::string& fileName );
 std::vector<float> subtractPedestals( std::vector<float> raw, std::vector< std::pair<float, float> > pedestals, float nSigma );
 float sumVector( std::vector<float> v );
 bool checkVector( std::vector<float> v, float theMax=4095. );
@@ -42,26 +41,25 @@ int main( int argc, char* argv[] ) {
   TTree* tree = (TTree*)file->Get("eventRawData");
 
 
-  //std::string pedestalFileName = "run_BTF_91_20140430-015540_pedestal_dqmPlots.root";
-  std::string pedestalFileName = "run_BTF_000002_ped_dqmPlots.root";
+  std::string pedestalFileName = "data/run_BTF_91_20140430-015540_pedestal.root";
   std::cout << "-> Using pedestal file: " << pedestalFileName << std::endl;
 
-  std::vector<std::pair<float, float> > pedestals = getPedestals(pedestalFileName, "CEF3RAW_cef3RawSpectrum", CEF3_CHANNELS );
+  std::vector<std::pair<float, float> > pedestals = getPedestals( "cef3", pedestalFileName );
   std::cout << std::endl;
   std::cout << "-> Got pedestals of CeF3: " << std::endl;
   for( unsigned i=0; i<CEF3_CHANNELS; ++i )
     std::cout << " CeF3 Channel " << i << ": " << pedestals[i].first << " (+- " << pedestals[i].second << ")" << std::endl;
   std::cout << std::endl;
 
-  std::vector<std::pair<float, float> > pedestals_bgo = getPedestals(pedestalFileName, "BGORAW_bgoRawSpectrum", BGO_CHANNELS );
+  std::vector<std::pair<float, float> > pedestals_bgo = getPedestals( "bgo", pedestalFileName );
   std::cout << std::endl;
   std::cout << "-> Got pedestals of BGO: " << std::endl;
   for( unsigned i=0; i<BGO_CHANNELS; ++i )
     std::cout << " BGO Channel " << i << ": " << pedestals_bgo[i].first << " (+- " << pedestals_bgo[i].second << ")" << std::endl;
   std::cout << std::endl;
 
-  std::vector<std::pair<float, float> > pedestals_hodox = getPedestalsHodo("X", pedestalFileName);
-  std::vector<std::pair<float, float> > pedestals_hodoy = getPedestalsHodo("Y", pedestalFileName);
+  std::vector<std::pair<float, float> > pedestals_hodox = getPedestals("hodox", pedestalFileName);
+  std::vector<std::pair<float, float> > pedestals_hodoy = getPedestals("hodoy", pedestalFileName);
   std::cout << "-> Got Hodoscope pedestals: " << std::endl;
   std::cout << std::endl;
   for( unsigned i=0; i<HODOX_CHANNELS; ++i )
@@ -156,11 +154,12 @@ int main( int argc, char* argv[] ) {
 
 
     for( unsigned i=0; i<40; ++i ) {
+
       int board  = adcBoard[i];
       int channel= adcChannel[i];
 
-      if( board==0 ) {
-        if     ( channel==(BGO_ADC_START_CHANNEL  ) )  bgo[0] = adcData[i];
+      if( board==BGO_ADC_BOARD ) {
+             if( channel==(BGO_ADC_START_CHANNEL  ) )  bgo[0] = adcData[i];
         else if( channel==(BGO_ADC_START_CHANNEL+1) )  bgo[1] = adcData[i];
         else if( channel==(BGO_ADC_START_CHANNEL+2) )  bgo[2] = adcData[i];
         else if( channel==(BGO_ADC_START_CHANNEL+3) )  bgo[3] = adcData[i];
@@ -168,12 +167,15 @@ int main( int argc, char* argv[] ) {
         else if( channel==(BGO_ADC_START_CHANNEL+5) )  bgo[5] = adcData[i];
         else if( channel==(BGO_ADC_START_CHANNEL+6) )  bgo[6] = adcData[i];
         else if( channel==(BGO_ADC_START_CHANNEL+7) )  bgo[7] = adcData[i];
-      } else if( board==1 ) {
-        if     ( channel==(CEF3_ADC_START_CHANNEL  ) )  cef3[0]  = adcData[i];
+      }
+      if( board==CEF3_ADC_BOARD ) {
+             if( channel==(CEF3_ADC_START_CHANNEL  ) )  cef3[0]  = adcData[i];
         else if( channel==(CEF3_ADC_START_CHANNEL+1) )  cef3[1]  = adcData[i];
         else if( channel==(CEF3_ADC_START_CHANNEL+2) )  cef3[2]  = adcData[i];
         else if( channel==(CEF3_ADC_START_CHANNEL+3) )  cef3[3]  = adcData[i];
-        else if( channel==(HODOX_ADC_START_CHANNEL  ) ) hodox[0] = adcData[i];
+      }
+      if( board==HODOX_ADC_BOARD ) {
+             if( channel==(HODOX_ADC_START_CHANNEL  ) ) hodox[0] = adcData[i];
         else if( channel==(HODOX_ADC_START_CHANNEL+1) ) hodox[1] = adcData[i];
         else if( channel==(HODOX_ADC_START_CHANNEL+2) ) hodox[2] = adcData[i];
         else if( channel==(HODOX_ADC_START_CHANNEL+3) ) hodox[3] = adcData[i];
@@ -181,7 +183,9 @@ int main( int argc, char* argv[] ) {
         else if( channel==(HODOX_ADC_START_CHANNEL+5) ) hodox[5] = adcData[i];
         else if( channel==(HODOX_ADC_START_CHANNEL+6) ) hodox[6] = adcData[i];
         else if( channel==(HODOX_ADC_START_CHANNEL+7) ) hodox[7] = adcData[i];
-        else if( channel==(HODOY_ADC_START_CHANNEL  ) ) hodoy[0] = adcData[i];
+      }
+      if( board==HODOY_ADC_BOARD ) { 
+             if( channel==(HODOY_ADC_START_CHANNEL  ) ) hodoy[0] = adcData[i];
         else if( channel==(HODOY_ADC_START_CHANNEL+1) ) hodoy[1] = adcData[i];
         else if( channel==(HODOY_ADC_START_CHANNEL+2) ) hodoy[2] = adcData[i];
         else if( channel==(HODOY_ADC_START_CHANNEL+3) ) hodoy[3] = adcData[i];
@@ -437,52 +441,52 @@ int main( int argc, char* argv[] ) {
 
 
 
-std::vector< std::pair<float, float> > getPedestals( const std::string& fileName, const std::string& name, int n ) {
+
+
+
+std::vector< std::pair<float, float> > getPedestals( const std::string& type, const std::string& fileName ) {
+
+  int nBoard=-1;
+  int nChannels=-1;
+  int firstChannel=-1;
+  if( type=="cef3" ) {
+    nBoard       = CEF3_ADC_BOARD;
+    nChannels    = CEF3_CHANNELS;
+    firstChannel = CEF3_ADC_START_CHANNEL;
+  } else if( type=="bgo" ) {
+    nBoard       = BGO_ADC_BOARD;
+    nChannels    = BGO_CHANNELS;
+    firstChannel = BGO_ADC_START_CHANNEL;
+  } else if( type=="hodox" ) {
+    nBoard       = HODOX_ADC_BOARD;
+    nChannels    = HODOX_CHANNELS;
+    firstChannel = HODOX_ADC_START_CHANNEL;
+  } else if( type=="hodoy" ) {
+    nBoard       = HODOY_ADC_BOARD;
+    nChannels    = HODOY_CHANNELS;
+    firstChannel = HODOY_ADC_START_CHANNEL;
+  } else {
+    std::cout << "ERROR! Unkown type '" << type << "'!" << std::endl;
+    std::cout << "Don't know what pedestals you're looking for." << std::endl;
+    std::cout << "Exiting." << std::endl;
+    exit(77);
+  }
+
+    
 
   TFile* file = TFile::Open(fileName.c_str());
+  TTree* tree = (TTree*)file->Get("eventRawData");
 
   std::vector< std::pair<float, float> > peds;
-  for( int i=0; i<n; ++i ) {
-    TH1D* h1_ped = (TH1D*)file->Get(Form("%s_%d", name.c_str(), i));
+  for( unsigned i=0; i<nChannels; ++i ) {
+    int iChannel = firstChannel+i;
+    TH1D* h1_ped = new TH1D("ped", "", 500, 0., 500.);
+    tree->Project( "ped", "adcData", Form("adcBoard==%d && adcChannel==%d", nBoard, iChannel) );
     std::pair<float, float>  thispair;
     thispair.first  = h1_ped->GetMean();
     thispair.second = h1_ped->GetRMS();
     peds.push_back(thispair);
-  }
-
-  return peds;
-  
-}
-
-
-
-float getMeanposHodo( std::vector<float> hodo, std::vector<std::pair<float,float> > pedestals, float nSigma ) {
-
-  float mean = 0.;
-  float eTot = 0.;
-  for( unsigned i=0; i<hodo.size(); ++i ) {
-    if( hodo[i] > (pedestals[i].first + nSigma* pedestals[i].second) ) {
-      mean += -(i-3.5);
-      eTot += 1.;
-    }
-  }
-
-  return mean/eTot;
-
-}
-
-
-std::vector< std::pair<float, float> > getPedestalsHodo( const std::string type, const std::string fileName ) {
-
-  TFile* file = TFile::Open(fileName.c_str());
-
-  std::vector< std::pair<float, float> > peds;
-  for( unsigned i=0; i<HODOX_CHANNELS; ++i ) {
-    TH1D* h1_ped = (TH1D*)file->Get(Form("HODO%sRAW_hodo%sRawSpectrum_%d", type.c_str(), type.c_str(), i));
-    std::pair<float, float>  thispair;
-    thispair.first  = h1_ped->GetMean();
-    thispair.second = h1_ped->GetRMS();
-    peds.push_back(thispair);
+    delete h1_ped;
   }
 
   return peds;
@@ -526,6 +530,21 @@ bool checkVector( std::vector<float> v, float theMax ) {
   }
 
   return returnBool;
+
+}
+
+float getMeanposHodo( std::vector<float> hodo, std::vector<std::pair<float,float> > pedestals, float nSigma ) {
+
+  float mean = 0.;
+  float eTot = 0.;
+  for( unsigned i=0; i<hodo.size(); ++i ) {
+    if( hodo[i] > (pedestals[i].first + nSigma* pedestals[i].second) ) {
+      mean += -(i-3.5);
+      eTot += 1.;
+    }
+  }
+
+  return mean/eTot;
 
 }
 
