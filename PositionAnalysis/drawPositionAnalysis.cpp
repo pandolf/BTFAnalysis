@@ -237,7 +237,11 @@ int main( int argc, char* argv[] ) {
 
 
 
-  drawSinglePlot( outputdir, "cef3_corr_spectrum" , file, "cef3_corr", "ADC Counts", 4, 0., 3000., 10, true );
+  //drawSinglePlot( outputdir, "cef3_spectrum"      , file, "cef3"     , "ADC Counts", 4, 0., 3500., 10, true );
+  //drawSinglePlot( outputdir, "cef3_corr_spectrum" , file, "cef3_corr", "ADC Counts", 4, 0., 3500., 10, true );
+
+  drawSinglePlot( outputdir, "cef3_spectrum_lin"      , file, "cef3"     , "ADC Counts", 4, 0., 3500., 10, false );
+  drawSinglePlot( outputdir, "cef3_corr_spectrum_lin" , file, "cef3_corr", "ADC Counts", 4, 0., 3500., 10, false );
 
   return 0;
 
@@ -285,14 +289,16 @@ void drawSinglePlot( const std::string& outputdir, const std::string& saveName, 
 
   }
 
+  if( !plotLog ) yMax = 3000.;
 
   TCanvas* c1 = new TCanvas( "c1_new", "", 600, 600 );
   c1->cd();
   if( plotLog ) c1->SetLogy();
 
 
-  float yScaleFactor = (plotLog) ? 5.  : 1.3;
-  float yMin         = (plotLog) ? 0.1 :  1.;
+  float yScaleFactor = 1.3;
+  //float yScaleFactor = (plotLog) ? 5.  : 1.3;
+  float yMin         = (plotLog) ? 10. :  0.;
 
   TH2D* h2_axes = new TH2D("axes_new", "", 10, xMin, xMax, 10, yMin, yMax*yScaleFactor );
   h2_axes->SetXTitle( axisName.c_str() );
@@ -303,7 +309,7 @@ void drawSinglePlot( const std::string& outputdir, const std::string& saveName, 
   legend->Draw("Same");
 
   TPaveText* label_top = getLabelTop();
-  TPaveText* label_run = getLabelRun(runName, false);
+  TPaveText* label_run = getLabelRun(runName, !plotLog);
   label_top->Draw("same");
   label_run->Draw("same");
 
@@ -314,6 +320,31 @@ void drawSinglePlot( const std::string& outputdir, const std::string& saveName, 
 
   c1->SaveAs( Form("%s/%s.eps", outputdir.c_str(), saveName.c_str()) );
   c1->SaveAs( Form("%s/%s.png", outputdir.c_str(), saveName.c_str()) );
+
+
+  c1->Clear();
+
+  // and now draw also individual channels:
+  for( unsigned i=0; i<nChannels; ++i ) {
+  
+    h2_axes->Draw();
+    label_top->Draw("Same");
+    label_run->Draw("Same");
+
+    histos[i]->SetLineColor(46);
+    histos[i]->Draw("same");
+
+    TPaveText* labelChannel = new TPaveText( 0.65, 0.8, 0.9, 0.85, "brNDC" );
+    labelChannel->SetTextSize( 0.035 );
+    labelChannel->SetFillColor( 0 );
+    labelChannel->AddText( Form("Channel %d", i) );
+    labelChannel->Draw("same");
+  
+    c1->SaveAs( Form("%s/%s_%d.eps", outputdir.c_str(), saveName.c_str(), i) );
+    c1->SaveAs( Form("%s/%s_%d.png", outputdir.c_str(), saveName.c_str(), i) );
+
+  }
+
 
   delete c1;
   delete h2_axes;
