@@ -19,8 +19,7 @@ std::vector< std::pair<float, float> > getPedestalsHodo( const std::string type,
 std::vector<float> subtractPedestals( std::vector<float> raw, std::vector< std::pair<float, float> > pedestals, float nSigma );
 float sumVector( std::vector<float> v );
 bool checkVector( std::vector<float> v, float theMax=4095. );
-float getMeanposHodo( std::vector<float> hodo, std::vector< std::pair<float, float> > pedestals, float nSigma);
-
+float getMeanposHodo( std::vector<float> hodo,  int& nHodoFibers);
 
 
 int main( int argc, char* argv[] ) {
@@ -80,6 +79,9 @@ int main( int argc, char* argv[] ) {
 
   int nBins = 500;
   float xMax = xySize*3./2.;
+  int nHodoFibersX;
+  int nHodoFibersY;
+
 
   TH1D* h1_xPos = new TH1D("xPos", "", nBins, -xMax, xMax);
   TH1D* h1_yPos = new TH1D("yPos", "", nBins, -xMax, xMax);
@@ -126,7 +128,41 @@ int main( int argc, char* argv[] ) {
 
   int nentries = tree->GetEntries();
 
+  std::string outfileName = "PosAn_" + runName + ".root";
+  TFile* outfile = TFile::Open( outfileName.c_str(), "RECREATE" );
+
+  TTree* outTree = new TTree("tree_passedEvents","tree_passedEvents");
+  float cef3_[CEF3_CHANNELS],bgo_[BGO_CHANNELS],hodox_[HODOX_CHANNELS],hodoy_[HODOY_CHANNELS];
+  float cef3_corr_[CEF3_CHANNELS],bgo_corr_[BGO_CHANNELS],hodox_corr_[HODOX_CHANNELS],hodoy_corr_[HODOY_CHANNELS];
+  int cef3_chan=CEF3_CHANNELS;
+  int bgo_chan=BGO_CHANNELS;
+  int hodox_chan=HODOX_CHANNELS;
+  int hodoy_chan=HODOY_CHANNELS; 
+
+  outTree->Branch( "evtNumber", &evtNumber,"evtNumber/F" );
+  outTree->Branch( "adcData", adcData, "adcData/i" );
+  outTree->Branch( "adcBoard", adcBoard, "adcBoard/i" );
+  outTree->Branch( "adcChannel", adcChannel,"adcChannel/i" );
+  outTree->Branch( "nHodoFibersX", &nHodoFibersX, "nHodoFibersX/I" );
+  outTree->Branch( "nHodoFibersY", &nHodoFibersY, "nHodoFibersY/I" );
+  outTree->Branch( "hodox_chan", &hodox_chan, "hodox_chan/I" );
+  outTree->Branch( "hodoy_chan", &hodoy_chan, "hodoy_chan/I" );
+  outTree->Branch( "cef3_chan", &cef3_chan, "cef3_chan/I" );
+  outTree->Branch( "bgo_chan", &bgo_chan, "bgo_chan/I" );
+  outTree->Branch( "hodox", hodox_, "hodox_[hodox_chan]/F" );
+  outTree->Branch( "hodoy", hodoy_, "hodoy_[hodoy_chan]/F" );
+  outTree->Branch( "bgo", bgo_, "bgo_[bgo_chan]/F" );
+  outTree->Branch( "cef3", cef3_, "cef3_[cef3_chan]/F" );
+  outTree->Branch( "bgo_corr", bgo_corr_, "bgo_corr_[bgo_chan]/F" );
+  outTree->Branch( "cef3_corr", cef3_corr_, "cef3_corr_[cef3_chan]/F" );
+  outTree->Branch( "hodox_corr", hodox_corr_, "hodox_corr_[hodox_chan]/F" );
+  outTree->Branch( "hodoy_corr", hodoy_corr_, "hodoy_corr_[hodoy_chan]/F" );
+
+
+
   for( unsigned iEntry=0; iEntry<nentries; ++iEntry ) {
+    nHodoFibersX=0;
+    nHodoFibersY=0;
 
     tree->GetEntry(iEntry);
 
@@ -187,10 +223,13 @@ int main( int argc, char* argv[] ) {
       }
     }
 
-
+    float nSigma_hodo = 4.;
     std::vector<float>  bgo_corr = subtractPedestals( bgo , pedestals_bgo, 2. );
     std::vector<float> cef3_corr = subtractPedestals( cef3, pedestals,     2. );
+    std::vector<float> hodox_corr = subtractPedestals( hodox, pedestals_hodox,     nSigma_hodo );
+    std::vector<float> hodoy_corr = subtractPedestals( hodoy, pedestals_hodoy,     nSigma_hodo );
 
+    //    for(int i=0;i<8;i++)std::cout<<"hodox"<<hodox_corr[i]<<std::endl;
 
     bool cef3_ok = checkVector(cef3);
     bool cef3_corr_ok = checkVector(cef3_corr);
@@ -202,9 +241,9 @@ int main( int argc, char* argv[] ) {
     bool hodox_ok = checkVector(hodox, 99999.);
     bool hodoy_ok = checkVector(hodoy, 99999.);
 
-    float nSigma_hodo = 4.;
-    float xPos_hodo = getMeanposHodo(hodox, pedestals_hodox, nSigma_hodo);
-    float yPos_hodo = getMeanposHodo(hodoy, pedestals_hodoy, nSigma_hodo);
+
+    float xPos_hodo = getMeanposHodo(hodox_corr, nHodoFibersX);
+    float yPos_hodo = getMeanposHodo(hodoy_corr, nHodoFibersY);
 
     if( hodox_ok )
       h1_xPos_hodo->Fill(xPos_hodo);
@@ -362,6 +401,26 @@ int main( int argc, char* argv[] ) {
           h2_correlation_bgo_yPos->Fill( yPos, yPos_bgo );
         }
 
+	for(int i=0;i<CEF3_CHANNELS;i++){
+	  cef3_[i]=cef3[i]; 
+	  cef3_corr_[i]=cef3_corr[i];
+	}
+	for(int i=0;i<BGO_CHANNELS;i++){
+	  bgo_[i]=bgo[i];
+	  bgo_corr_[i]=bgo_corr[i];
+	}
+	for(int i=0;i<HODOX_CHANNELS;i++){
+	  hodox_[i]=hodox[i];
+	  hodox_corr_[i]=hodox_corr[i];
+	}
+	for(int i=0;i<HODOY_CHANNELS;i++){
+	  hodoy_[i]=hodoy[i];
+	  hodoy_corr_[i]=hodoy_corr[i];
+	}
+
+	outTree->Fill();
+
+
       } // if cef3_ok
 
     }
@@ -371,9 +430,12 @@ int main( int argc, char* argv[] ) {
 
   std::cout << "-> Events passing overflow cut: " << h1_xPos->GetEntries() << "/" << nentries << " (" << 100.* h1_xPos->GetEntries()/nentries << "%)" << std::endl;
 
-  std::string outfileName = "PosAn_" + runName + ".root";
-  TFile* outfile = TFile::Open( outfileName.c_str(), "RECREATE" );
+
+
   outfile->cd();
+
+
+  outTree->Write();
 
   h1_xPos->Write();
   h1_yPos->Write();
@@ -445,14 +507,16 @@ std::vector< std::pair<float, float> > getPedestals( const std::string& fileName
 
 
 
-float getMeanposHodo( std::vector<float> hodo, std::vector<std::pair<float,float> > pedestals, float nSigma ) {
+float getMeanposHodo( std::vector<float> hodo_corr, int& nHodoFibers ) {
 
   float mean = 0.;
   float eTot = 0.;
-  for( unsigned i=0; i<hodo.size(); ++i ) {
-    if( hodo[i] > (pedestals[i].first + nSigma* pedestals[i].second) ) {
+  for( unsigned i=0; i<hodo_corr.size(); ++i ) {
+    //    if( hodo[i] > (pedestals[i].first + nSigma* pedestals[i].second) ) {
+    if( hodo_corr[i] > 0.) {
       mean += -(i-3.5);
       eTot += 1.;
+      nHodoFibers++;
     }
   }
 
