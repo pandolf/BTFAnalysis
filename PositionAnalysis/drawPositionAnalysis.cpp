@@ -21,6 +21,7 @@ std::string runName;
 
 TStyle* setStyle();
 TGraphErrors* get_xyCenter( TH2D* h2_xyPos );
+void drawSinglePositionPlot( const std::string& outputdir, TFile* file, const std::string& runName, const std::string& suffix );
 void drawSinglePlot( const std::string& outputdir, const std::string& saveName, TFile* file, const std::string& name, const std::string& axisName, int nChannels, float xMin=0, float xMax=4095, int rebin=1, bool plotLog=false );
 TPaveText* getLabelTop();
 TPaveText* getLabelRun( const std::string& runName, bool top=true );
@@ -48,6 +49,25 @@ int main( int argc, char* argv[] ) {
   TStyle* style = setStyle();
   style->cd();
 
+  drawSinglePositionPlot( outputdir, file, runName, "" );
+  drawSinglePositionPlot( outputdir, file, runName, "_singleEle" );
+
+  //drawSinglePlot( outputdir, "cef3_spectrum"      , file, "cef3"     , "ADC Counts", 4, 0., 3500., 10, true );
+  //drawSinglePlot( outputdir, "cef3_corr_spectrum" , file, "cef3_corr", "ADC Counts", 4, 0., 3500., 10, true );
+
+  drawSinglePlot( outputdir, "cef3_spectrum_lin"      , file, "cef3"     , "ADC Counts", 4, 0., 3500., 10, false );
+  drawSinglePlot( outputdir, "cef3_corr_spectrum_lin" , file, "cef3_corr", "ADC Counts", 4, 0., 3500., 10, false );
+
+  return 0;
+
+}
+
+
+
+
+
+
+void drawSinglePositionPlot( const std::string& outputdir, TFile* file, const std::string& runName, const std::string& suffix ) {
 
   // manually set beam nominal position for some known runs:
   float beamX = -999.;
@@ -72,9 +92,9 @@ int main( int argc, char* argv[] ) {
   TCanvas* c1 = new TCanvas("c1", "", 600, 600);
   c1->cd();
 
-  TH2D* h2_xyPos = (TH2D*)file->Get("xyPos"); 
-  TH2D* h2_xyPos_hodo = (TH2D*)file->Get("xyPos_hodo"); 
-  TH2D* h2_xyPos_bgo = (TH2D*)file->Get("xyPos_bgo"); 
+  TH2D* h2_xyPos      = (TH2D*)file->Get(Form("xyPos%s", suffix.c_str())); 
+  TH2D* h2_xyPos_hodo = (TH2D*)file->Get(Form("xyPos%s_hodo", suffix.c_str())); 
+  TH2D* h2_xyPos_bgo  = (TH2D*)file->Get(Form("xyPos%s_bgo", suffix.c_str())); 
 
   float xySize = 25.;
   float xMax = xySize*3./2.;
@@ -193,9 +213,8 @@ int main( int argc, char* argv[] ) {
   gr_xyCenter->Draw("p same");
 
 
-
-  c1->SaveAs(Form("%s/xyPos.eps", outputdir.c_str()) );
-  c1->SaveAs(Form("%s/xyPos.png", outputdir.c_str()) );
+  c1->SaveAs(Form("%s/xyPos%s.eps", outputdir.c_str(), suffix.c_str()) );
+  c1->SaveAs(Form("%s/xyPos%s.png", outputdir.c_str(), suffix.c_str()) );
 
   c1->Clear();
 
@@ -229,24 +248,15 @@ int main( int argc, char* argv[] ) {
   gr_xyCenter->Draw("p same");
 
 
-  c1->SaveAs(Form("%s/xyPos_zoom.eps", outputdir.c_str()) );
-  c1->SaveAs(Form("%s/xyPos_zoom.png", outputdir.c_str()) );
+  c1->SaveAs(Form("%s/xyPos%s_zoom.eps", outputdir.c_str(), suffix.c_str()) );
+  c1->SaveAs(Form("%s/xyPos%s_zoom.png", outputdir.c_str(), suffix.c_str()) );
 
-  c1->Clear();
-
-
-
-
-  //drawSinglePlot( outputdir, "cef3_spectrum"      , file, "cef3"     , "ADC Counts", 4, 0., 3500., 10, true );
-  //drawSinglePlot( outputdir, "cef3_corr_spectrum" , file, "cef3_corr", "ADC Counts", 4, 0., 3500., 10, true );
-
-  drawSinglePlot( outputdir, "cef3_spectrum_lin"      , file, "cef3"     , "ADC Counts", 4, 0., 3500., 10, false );
-  drawSinglePlot( outputdir, "cef3_corr_spectrum_lin" , file, "cef3_corr", "ADC Counts", 4, 0., 3500., 10, false );
-
-  return 0;
+  delete c1;
+  delete h2_axes;
+  delete h2_axes_zoom;
+  delete legend;
 
 }
-
 
 
 
