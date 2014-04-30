@@ -56,15 +56,6 @@ int main( int argc, char* argv[] ) {
 
   h2_axes->Draw();
 
-  h2_xyPos_hodo->SetMarkerColor(14);
-  h2_xyPos_hodo->Draw("same");
-
-  h2_xyPos->SetMarkerColor(46);
-  h2_xyPos->Draw("same");
-
-  h2_xyPos_bgo->SetMarkerColor(30);
-  h2_xyPos_bgo->Draw("same");
-
 
   TGraphErrors* gr_xyCenter      = get_xyCenter( h2_xyPos );
   TGraphErrors* gr_xyCenter_hodo = get_xyCenter( h2_xyPos_hodo );
@@ -102,13 +93,64 @@ int main( int argc, char* argv[] ) {
   label_top->AddText("500 MeV Electron Beam");
   label_top->Draw("same");
 
-  TPaveText* label_run = new TPaveText(0.34,0.86,0.54,0.91, "brNDC");
+  TPaveText* label_run = new TPaveText(0.34,0.86,0.9,0.91, "brNDC");
   label_run->SetFillColor(kWhite);
   label_run->SetTextSize(0.033);
-  label_run->SetTextAlign(31); // align right
+  label_run->SetTextAlign(11); // align right
   label_run->SetTextFont(42);
   label_run->AddText(Form("Run %s", runName.c_str()));
   label_run->Draw("same");
+
+  int lineColor = 17;
+
+  TLine* line_x1 = new TLine( -xMax, -xySize/2., +xMax, -xySize/2. );
+  line_x1->SetLineColor(lineColor);
+  line_x1->Draw("same");
+
+  TLine* line_x2 = new TLine( -xMax, +xySize/2., +xMax, +xySize/2. );
+  line_x2->SetLineColor(lineColor);
+  line_x2->Draw("same");
+
+  TLine* line_y1 = new TLine( -xySize/2., -xMax, -xySize/2., +xMax );
+  line_y1->SetLineColor(lineColor);
+  line_y1->Draw("same");
+
+  TLine* line_y2 = new TLine( +xySize/2., -xMax, +xySize/2., +xMax );
+  line_y2->SetLineColor(lineColor);
+  line_y2->Draw("same");
+
+
+
+  h2_xyPos_hodo->SetMarkerColor(14);
+  h2_xyPos->SetMarkerColor(46);
+  h2_xyPos_bgo->SetMarkerColor(30);
+
+  float hodoSize = 8.;
+  TLine* lineHodo_x1 = new TLine( -hodoSize/2., -hodoSize/2., +hodoSize/2., -hodoSize/2. );
+  lineHodo_x1->SetLineColor(kBlack);
+  lineHodo_x1->SetLineStyle(2);
+  lineHodo_x1->Draw("same");
+
+  TLine* lineHodo_x2 = new TLine( -hodoSize/2., +hodoSize/2., +hodoSize/2., +hodoSize/2. );
+  lineHodo_x2->SetLineColor(kBlack);
+  lineHodo_x2->SetLineStyle(2);
+  lineHodo_x2->Draw("same");
+
+  TLine* lineHodo_y1 = new TLine( -hodoSize/2., -hodoSize/2., -hodoSize/2., +hodoSize/2. );
+  lineHodo_y1->SetLineColor(kBlack);
+  lineHodo_y1->SetLineStyle(2);
+  lineHodo_y1->Draw("same");
+
+  TLine* lineHodo_y2 = new TLine( +hodoSize/2., -hodoSize/2., +hodoSize/2., +hodoSize/2. );
+  lineHodo_y2->SetLineColor(kBlack);
+  lineHodo_y2->SetLineStyle(2);
+  lineHodo_y2->Draw("same");
+
+
+  h2_xyPos_bgo->Draw("same");
+  h2_xyPos->Draw("same");
+  h2_xyPos_hodo->Draw("same");
+
 
   gr_xyCenter_hodo->Draw("p same");
   gr_xyCenter_bgo->Draw("p same");
@@ -125,13 +167,19 @@ int main( int argc, char* argv[] ) {
   h2_axes_zoom->SetYTitle("Y Position [mm]");
   h2_axes_zoom->Draw();
 
-  h2_xyPos_hodo->Draw("same");
-  h2_xyPos->Draw("same");
-  h2_xyPos_bgo->Draw("same");
-
   legend->Draw("same");
   label_top->Draw("same");
   label_run->Draw("same");
+
+
+  h2_xyPos_bgo->Draw("same");
+  h2_xyPos_hodo->Draw("same");
+  h2_xyPos->Draw("same");
+
+  lineHodo_x1->Draw("same");
+  lineHodo_x2->Draw("same");
+  lineHodo_y1->Draw("same");
+  lineHodo_y2->Draw("same");
 
   gr_xyCenter_hodo->Draw("p same");
   gr_xyCenter_bgo->Draw("p same");
