@@ -16,14 +16,20 @@
 
 
 
+std::string runName;
+
+
 TStyle* setStyle();
 TGraphErrors* get_xyCenter( TH2D* h2_xyPos );
+void drawSinglePlot( const std::string& outputdir, const std::string& saveName, TFile* file, const std::string& name, const std::string& axisName, int nChannels, float xMin=0, float xMax=4095, int rebin=1, bool plotLog=false );
+TPaveText* getLabelTop();
+TPaveText* getLabelRun( const std::string& runName, bool top=true );
 
 
 int main( int argc, char* argv[] ) {
 
   
-  std::string runName = "test_10";
+  runName = "test_10";
   if( argc>1 ) {
     std::string runName_str(argv[1]);
     runName = runName_str;
@@ -121,21 +127,11 @@ int main( int argc, char* argv[] ) {
     legend2->Draw("same");
 
 
-  TPaveText* label_top = new TPaveText(0.4,0.953,0.975,0.975, "brNDC");
-  label_top->SetFillColor(kWhite);
-  label_top->SetTextSize(0.038);
-  label_top->SetTextAlign(31); // align right
-  label_top->SetTextFont(62);
-  label_top->AddText("500 MeV Electron Beam");
+  TPaveText* label_top = getLabelTop();
+  TPaveText* label_run = getLabelRun(runName);
   label_top->Draw("same");
-
-  TPaveText* label_run = new TPaveText(0.34,0.86,0.9,0.91, "brNDC");
-  label_run->SetFillColor(kWhite);
-  label_run->SetTextSize(0.033);
-  label_run->SetTextAlign(11); // align right
-  label_run->SetTextFont(42);
-  label_run->AddText(Form("Run %s", runName.c_str()));
   label_run->Draw("same");
+
 
   int lineColor = 17;
 
@@ -236,9 +232,101 @@ int main( int argc, char* argv[] ) {
   c1->SaveAs(Form("%s/xyPos_zoom.eps", outputdir.c_str()) );
   c1->SaveAs(Form("%s/xyPos_zoom.png", outputdir.c_str()) );
 
+  c1->Clear();
+
+
+
+
+  drawSinglePlot( outputdir, "cef3_corr_spectrum" , file, "cef3_corr", "ADC Counts", 4, 0., 3000., 10, true );
+
   return 0;
 
 }
+
+
+
+
+
+void drawSinglePlot( const std::string& outputdir, const std::string& saveName, TFile* file, const std::string& name, const std::string& axisName, int nChannels, float xMin, float xMax, int rebin, bool plotLog ) {
+
+
+  std::vector<int> colors;
+  colors.push_back( 46 );
+  colors.push_back( 38 );
+  colors.push_back( 30 );
+  colors.push_back( 42 );
+  colors.push_back( 29 );
+  colors.push_back( kBlack );
+  colors.push_back( kGreen );
+  colors.push_back( kBlue  );
+
+  float yMin_leg = 0.9-0.05*nChannels;
+  TLegend* legend = new TLegend( 0.6, yMin_leg, 0.9, 0.9 );
+  legend->SetTextSize(0.035);
+  legend->SetFillColor(0);
+
+  float yMax;
+  std::vector<TH1D*> histos;
+
+  for(unsigned i=0; i<nChannels; ++i ) {
+
+    TH1D* h1 = (TH1D*)file->Get(Form("%s_%d", name.c_str(), i));
+    h1->SetLineColor( colors[i] );
+    h1->SetLineWidth( 2 );
+    h1->Rebin(rebin);
+  
+    histos.push_back(h1);
+
+    legend->AddEntry( h1, Form("Channel %d", i), "L" );
+
+
+    float thisMax = h1->GetMaximum();
+    if( thisMax>yMax ) yMax = thisMax;
+
+  }
+
+
+  TCanvas* c1 = new TCanvas( "c1_new", "", 600, 600 );
+  c1->cd();
+  if( plotLog ) c1->SetLogy();
+
+
+  float yScaleFactor = (plotLog) ? 5.  : 1.3;
+  float yMin         = (plotLog) ? 0.1 :  1.;
+
+  TH2D* h2_axes = new TH2D("axes_new", "", 10, xMin, xMax, 10, yMin, yMax*yScaleFactor );
+  h2_axes->SetXTitle( axisName.c_str() );
+  h2_axes->SetYTitle( "Entries" );
+
+  h2_axes->Draw();
+
+  legend->Draw("Same");
+
+  TPaveText* label_top = getLabelTop();
+  TPaveText* label_run = getLabelRun(runName, false);
+  label_top->Draw("same");
+  label_run->Draw("same");
+
+  for(unsigned i=0; i<nChannels; ++i ) 
+    histos[i]->Draw("same");
+
+  gPad->RedrawAxis();
+
+  c1->SaveAs( Form("%s/%s.eps", outputdir.c_str(), saveName.c_str()) );
+  c1->SaveAs( Form("%s/%s.png", outputdir.c_str(), saveName.c_str()) );
+
+  delete c1;
+  delete h2_axes;
+  delete legend;
+
+}
+
+
+
+
+
+
+
 
 
 TStyle* setStyle() {
@@ -344,5 +432,38 @@ TGraphErrors* get_xyCenter( TH2D* h2_xyPos ) {
   gr_point->SetPointError( 0, x_err, y_err );
 
   return gr_point;
+
+}
+
+
+
+
+
+TPaveText* getLabelTop() {
+
+  TPaveText* label_top = new TPaveText(0.4,0.953,0.975,0.975, "brNDC");
+  label_top->SetFillColor(kWhite);
+  label_top->SetTextSize(0.038);
+  label_top->SetTextAlign(31); // align right
+  label_top->SetTextFont(62);
+  label_top->AddText("500 MeV Electron Beam");
+
+  return label_top;
+
+}
+
+
+TPaveText* getLabelRun( const std::string& runName, bool top ) {
+
+  float yMin = (top) ? 0.86 : 0.18;
+  float yMax = (top) ? 0.91 : 0.23;
+  TPaveText* label_run = new TPaveText(0.34,yMin,0.9,yMax, "brNDC");
+  label_run->SetFillColor(kWhite);
+  label_run->SetTextSize(0.033);
+  label_run->SetTextAlign(11); // align right
+  label_run->SetTextFont(42);
+  label_run->AddText(Form("Run %s", runName.c_str()));
+
+  return label_run;
 
 }
