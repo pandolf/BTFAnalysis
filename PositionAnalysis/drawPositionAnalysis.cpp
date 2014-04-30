@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <stdlib.h>
+#include <cmath>
 
 #include "TFile.h"
 #include "TH1D.h"
@@ -11,6 +12,7 @@
 #include "TPaveText.h"
 #include "TLegend.h"
 #include "TGraphErrors.h"
+#include "TEllipse.h"
 
 
 
@@ -39,6 +41,25 @@ int main( int argc, char* argv[] ) {
 
   TStyle* style = setStyle();
   style->cd();
+
+
+  // manually set beam nominal position for some known runs:
+  float beamX = -999.;
+  float beamY = -999.;
+  float beamR = 4.;
+  if( runName == "BTF_94_20140430-073300_beam" ) {
+    beamX = -3.;
+    beamY = +3.;
+  } else if( runName == "BTF_96_20140430-083733_beam" ) {
+    beamX = -6.;
+    beamY = +6.;
+  } else if( runName == "BTF_98_20140430-092026_beam" ) {
+    beamX = -9.;
+    beamY = +9.;
+  }
+
+  bool drawBeam = ((beamX>-999.) && (beamY>-999.));
+  bool beamInsideHodo = ((fabs(beamX)<4.) && (fabs(beamY)<4.));
 
 
   TCanvas* c1 = new TCanvas("c1", "", 600, 600);
@@ -77,6 +98,8 @@ int main( int argc, char* argv[] ) {
   gr_xyCenter_bgo->SetMarkerSize(1.6);
 
 
+
+
   TLegend* legend = new TLegend( 0.75, 0.21, 0.9, 0.39 );
   legend->SetFillColor(0);
   legend->SetTextSize(0.038);
@@ -84,6 +107,18 @@ int main( int argc, char* argv[] ) {
   legend->AddEntry( gr_xyCenter_bgo, "BGO", "P" );
   legend->AddEntry( gr_xyCenter_hodo, "Hodo", "P" );
   legend->Draw("same");
+
+
+  TGraph* gr_beamPos = new TGraph(0);
+  gr_beamPos->SetMarkerStyle(24);
+  gr_beamPos->SetMarkerSize(4);
+  TLegend* legend2 = new TLegend( 0.18, 0.21, 0.52, 0.25 );
+  legend2->SetFillColor(0);
+  legend2->SetTextSize(0.035);
+  legend2->AddEntry( gr_beamPos, "Beam Position", "P" );
+  if( drawBeam ) 
+    legend2->Draw("same");
+
 
   TPaveText* label_top = new TPaveText(0.4,0.953,0.975,0.975, "brNDC");
   label_top->SetFillColor(kWhite);
@@ -151,10 +186,16 @@ int main( int argc, char* argv[] ) {
   h2_xyPos->Draw("same");
   h2_xyPos_hodo->Draw("same");
 
+  TEllipse* beamPos = new TEllipse( beamX, beamY, beamR, beamR );
+  beamPos->SetLineColor(kBlack);
+  beamPos->SetFillStyle(0);
+  beamPos->Draw("same"); 
 
   gr_xyCenter_hodo->Draw("p same");
   gr_xyCenter_bgo->Draw("p same");
   gr_xyCenter->Draw("p same");
+
+
 
   c1->SaveAs(Form("%s/xyPos.eps", outputdir.c_str()) );
   c1->SaveAs(Form("%s/xyPos.png", outputdir.c_str()) );
@@ -168,6 +209,9 @@ int main( int argc, char* argv[] ) {
   h2_axes_zoom->Draw();
 
   legend->Draw("same");
+  drawBeam = ((fabs(beamX)<xMax) && (fabs(beamY)<xMax));
+  if( drawBeam )
+    legend2->Draw("same");
   label_top->Draw("same");
   label_run->Draw("same");
 
@@ -181,9 +225,12 @@ int main( int argc, char* argv[] ) {
   lineHodo_y1->Draw("same");
   lineHodo_y2->Draw("same");
 
+  beamPos->Draw("same"); 
+
   gr_xyCenter_hodo->Draw("p same");
   gr_xyCenter_bgo->Draw("p same");
   gr_xyCenter->Draw("p same");
+
 
   c1->SaveAs(Form("%s/xyPos_zoom.eps", outputdir.c_str()) );
   c1->SaveAs(Form("%s/xyPos_zoom.png", outputdir.c_str()) );
