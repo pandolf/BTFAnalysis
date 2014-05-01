@@ -325,11 +325,12 @@ int main( int argc, char* argv[] ) {
     bool hodox_ok = checkVector(hodox, 99999.);
     bool hodoy_ok = checkVector(hodoy, 99999.);
 
+    int clusterSize=2;
     std::vector<HodoCluster*> hodoxFibres   = getHodoClusters( hodox_corr, 1 ); // fibres are just clusters with size = 1
-    std::vector<HodoCluster*> hodoxClusters = getHodoClusters( hodox_corr, 3 );
+    std::vector<HodoCluster*> hodoxClusters = getHodoClusters( hodox_corr, clusterSize );
 
     std::vector<HodoCluster*> hodoyFibres   = getHodoClusters( hodoy_corr, 1 );
-    std::vector<HodoCluster*> hodoyClusters = getHodoClusters( hodoy_corr, 3 );
+    std::vector<HodoCluster*> hodoyClusters = getHodoClusters( hodoy_corr, clusterSize );
 
     nHodoFibersX = hodoxFibres.size();
     nHodoFibersY = hodoyFibres.size();
@@ -366,20 +367,20 @@ int main( int argc, char* argv[] ) {
     if( isSingleElectron ) {
 
       if( xPos_hodo>-100. )
-        h1_xPos_hodo->Fill(xPos_hodo);
+        h1_xPos_singleEle_hodo->Fill(xPos_hodo);
       if( yPos_hodo>-100. )
-        h1_yPos_hodo->Fill(yPos_hodo);
+        h1_yPos_singleEle_hodo->Fill(yPos_hodo);
 
       if( xPos_hodo>-100. && yPos_hodo>-100. ) 
-        h2_xyPos_hodo->Fill(xPos_hodo, yPos_hodo);
+        h2_xyPos_singleEle_hodo->Fill(xPos_hodo, yPos_hodo);
 
       if( xPos_hodoClust>-100. )
-        h1_xPos_hodoClust->Fill(xPos_hodoClust);
+        h1_xPos_singleEle_hodoClust->Fill(xPos_hodoClust);
       if( yPos_hodoClust>-100. )
-        h1_yPos_hodoClust->Fill(yPos_hodoClust);
+        h1_yPos_singleEle_hodoClust->Fill(yPos_hodoClust);
 
       if( xPos_hodoClust>-100. && yPos_hodoClust>-100. ) 
-        h2_xyPos_hodoClust->Fill(xPos_hodoClust, yPos_hodoClust);
+        h2_xyPos_singleEle_hodoClust->Fill(xPos_hodoClust, yPos_hodoClust);
 
     }
 
