@@ -11,7 +11,8 @@ ROOTFLAG = `${ROOTSYS}/bin/root-config --cflags --libs`
 EXTRALIBS := -L$(ROOTSYS)/lib  -lHtml -lMathCore -lGenVector -lMinuit -lEG -lRooFitCore -lRooFit
 
 
-all: positionAnalysis drawPositionAnalysis calibrateCeF3
+
+all: positionAnalysis drawPositionAnalysis hodoscopeAnalysis calibrateCeF3
 
 
 
@@ -24,9 +25,13 @@ drawPositionAnalysis: drawPositionAnalysis.cpp
 calibrateCeF3: calibrateCeF3.cpp
 	$(CC) -Wall $(INCLUDES) -o calibrateCeF3 calibrateCeF3.cpp $(ROOTFLAG) $(EXTRALIBS)
 
+hodoscopeAnalysis: hodoscopeAnalysis.cpp
+	$(CC) -Wall $(INCLUDES) -o hodoscopeAnalysis hodoscopeAnalysis.cpp $(ROOTFLAG) $(EXTRALIBS)
 
 
 
 clean:
 	rm positionAnalysis
 	rm drawPositionAnalysis 
+	rm hodoscopeAnalysis
+	rm calibrateCeF3
