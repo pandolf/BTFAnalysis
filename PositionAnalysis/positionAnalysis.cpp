@@ -18,7 +18,7 @@ std::vector< std::pair<float, float> > getPedestals( const std::string& type, co
 std::vector<float> subtractPedestals( std::vector<float> raw, std::vector< std::pair<float, float> > pedestals, float nSigma );
 float sumVector( std::vector<float> v );
 bool checkVector( std::vector<float> v, float theMax=4095. );
-float getMeanposHodo( std::vector<float> hodo, int& nHodoFibers, int& nHodoFibersCorr );
+float getMeanposHodo( std::vector<float> hodo, int& nHodoFibers, int& nHodoClusters );
 
 
 
@@ -82,8 +82,8 @@ int main( int argc, char* argv[] ) {
   float xMax = xySize*3./2.;
   int nHodoFibersX;
   int nHodoFibersY;
-  int nHodoFibersCorrX;
-  int nHodoFibersCorrY;
+  int nHodoClustersX;
+  int nHodoClustersY;
 
 
   TH1D* h1_xPos = new TH1D("xPos", "", nBins, -xMax, xMax);
@@ -174,8 +174,8 @@ int main( int argc, char* argv[] ) {
   outTree->Branch( "adcChannel", adcChannel,"adcChannel/i" );
   outTree->Branch( "nHodoFibersX", &nHodoFibersX, "nHodoFibersX/I" );
   outTree->Branch( "nHodoFibersY", &nHodoFibersY, "nHodoFibersY/I" );
-  outTree->Branch( "nHodoFibersCorrX", &nHodoFibersCorrX, "nHodoFibersCorrX/I" );
-  outTree->Branch( "nHodoFibersCorrY", &nHodoFibersCorrY, "nHodoFibersCorrY/I" );
+  outTree->Branch( "nHodoClustersX", &nHodoClustersX, "nHodoClustersX/I" );
+  outTree->Branch( "nHodoClustersY", &nHodoClustersY, "nHodoClustersY/I" );
   outTree->Branch( "hodox_chan", &hodox_chan, "hodox_chan/I" );
   outTree->Branch( "hodoy_chan", &hodoy_chan, "hodoy_chan/I" );
   outTree->Branch( "cef3_chan", &cef3_chan, "cef3_chan/I" );
@@ -194,8 +194,8 @@ int main( int argc, char* argv[] ) {
 
     nHodoFibersX=0;
     nHodoFibersY=0;
-    nHodoFibersCorrX=0;
-    nHodoFibersCorrY=0;
+    nHodoClustersX=0;
+    nHodoClustersY=0;
 
     tree->GetEntry(iEntry);
 
@@ -279,8 +279,8 @@ int main( int argc, char* argv[] ) {
     bool hodox_ok = checkVector(hodox, 99999.);
     bool hodoy_ok = checkVector(hodoy, 99999.);
 
-    float xPos_hodo = getMeanposHodo(hodox_corr, nHodoFibersX, nHodoFibersCorrX);
-    float yPos_hodo = getMeanposHodo(hodoy_corr, nHodoFibersY, nHodoFibersCorrY);
+    float xPos_hodo = getMeanposHodo(hodox_corr, nHodoFibersX, nHodoClustersX);
+    float yPos_hodo = getMeanposHodo(hodoy_corr, nHodoFibersY, nHodoClustersY);
 
     bool isSingleElectron = ((nHodoFibersX==1) && (nHodoFibersY==1));
 
@@ -681,7 +681,7 @@ bool checkVector( std::vector<float> v, float theMax ) {
 
 }
 
-float getMeanposHodo( std::vector<float> hodo_corr, int& nHodoFibers, int& nHodoFibersCorr ) {
+float getMeanposHodo( std::vector<float> hodo_corr, int& nHodoFibers, int& nHodoClusters ) {
 
   float mean = 0.;
   float eTot = 0.;
@@ -695,7 +695,7 @@ float getMeanposHodo( std::vector<float> hodo_corr, int& nHodoFibers, int& nHodo
       nHodoFibers++;
       if( !start ) {
         start = true;
-        nHodoFibersCorr+=1;
+        nHodoClusters+=1;
       } else {
         start = false;
       }
