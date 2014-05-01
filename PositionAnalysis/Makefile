@@ -11,11 +11,8 @@ ROOTFLAG = `${ROOTSYS}/bin/root-config --cflags --libs`
 EXTRALIBS := -L$(ROOTSYS)/lib  -lHtml -lMathCore -lGenVector -lMinuit -lEG -lRooFitCore -lRooFit
 
 
-<<<<<<< HEAD
-all: positionAnalysis drawPositionAnalysis hodoscopeAnalysis
-=======
-all: positionAnalysis drawPositionAnalysis calibrateCeF3
->>>>>>> 22c506bb8f0fcd0ad32a32a76c963fdbdbf17226
+
+all: positionAnalysis drawPositionAnalysis hodoscopeAnalysis calibrateCeF3
 
 
 
@@ -37,3 +34,4 @@ clean:
 	rm positionAnalysis
 	rm drawPositionAnalysis 
 	rm hodoscopeAnalysis
+	rm calibrateCeF3
