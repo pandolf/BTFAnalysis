@@ -13,6 +13,7 @@
 #include "TLegend.h"
 #include "TGraphErrors.h"
 #include "TEllipse.h"
+#include "TString.h"
 
 
 
@@ -23,10 +24,10 @@ TStyle* setStyle();
 TGraphErrors* get_xyCenter( TH2D* h2_xyPos );
 void drawSinglePositionPlot( const std::string& outputdir, TFile* file, const std::string& runName, const std::string& suffix );
 void drawSinglePlot( const std::string& outputdir, const std::string& saveName, TFile* file, const std::string& name, const std::string& axisName, int nChannels, float xMin=0, float xMax=4095, int rebin=1, bool plotLog=false );
-//void fitHodoWithBeam( TH1D* h1, float r, float& pos, float& pos_err );
 void fitHodoWithBeam( const std::string& outputdir, const std::string& suffix, TH1D* h1, float r, float& pos, float& pos_err );
 TPaveText* getLabelTop();
 TPaveText* getLabelRun( const std::string& runName, bool top=true );
+void getBeamPosition( const std::string& runName, float& beamX, float& beamY );
 
 
 int main( int argc, char* argv[] ) {
@@ -76,16 +77,8 @@ void drawSinglePositionPlot( const std::string& outputdir, TFile* file, const st
   float beamY = -999.;
   float beamRX = 4.;
   float beamRY = 2.;
-  if( runName == "BTF_94_20140430-073300_beam" ) {
-    beamX = -3.;
-    beamY = +3.;
-  } else if( runName == "BTF_96_20140430-083733_beam" ) {
-    beamX = -6.;
-    beamY = +6.;
-  } else if( runName == "BTF_98_20140430-092026_beam" ) {
-    beamX = -9.;
-    beamY = +9.;
-  }
+  getBeamPosition( runName, beamX, beamY );
+
 
   bool drawBeam = ((beamX>-999.) && (beamY>-999.));
   //bool beamInsideHodo = ((fabs(beamX)<4.) && (fabs(beamY)<4.));
@@ -570,3 +563,97 @@ void fitHodoWithBeam( const std::string& outputdir, const std::string& suffix, T
   delete f1_gaus;
 
 }
+
+
+
+
+
+void getBeamPosition( const std::string& runName, float& beamX, float& beamY ) {
+
+  TString runName_tstr(runName.c_str());
+
+
+  if( runName == "BTF_94_20140430-073300_beam" ) {
+    beamX = -3.;
+    beamY = +3.;
+  } else if( runName == "BTF_96_20140430-083733_beam" ) {
+    beamX = -6.;
+    beamY = +6.;
+  } else if( runName == "BTF_98_20140430-092026_beam" ) {
+    beamX = -9.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_144_2014") ) {
+    beamX = +12.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_145_2014") ) {
+    beamX = +10.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_146_2014") ) {
+    beamX = +8.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_147_2014") ) {
+    beamX = +6.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_148_2014") ) {
+    beamX = +4.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_149_2014") ) {
+    beamX = +2.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_150_2014") ) {
+    beamX = +0.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_151_2014") ) {
+    beamX = -2.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_152_2014") ) {
+    beamX = -4.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_153_2014") ) {
+    beamX = -6.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_154_2014") ) {
+    beamX = -8.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_155_2014") ) {
+    beamX = -10.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_156_2014") ) {
+    beamX = -12.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_157_2014") ) {
+    beamX = +0.;
+    beamY = +8.;
+  } else if( runName_tstr.BeginsWith("BTF_158_2014") ) {
+    beamX = +0.;
+    beamY = +6.;
+  } else if( runName_tstr.BeginsWith("BTF_159_2014") ) {
+    beamX = +0.;
+    beamY = +4.;
+  } else if( runName_tstr.BeginsWith("BTF_160_2014") ) {
+    beamX = +0.;
+    beamY = +2.;
+  } else if( runName_tstr.BeginsWith("BTF_161_2014") ) {
+    beamX = +0.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_162_2014") ) {
+    beamX = +0.;
+    beamY = -2.;
+  } else if( runName_tstr.BeginsWith("BTF_163_2014") ) {
+    beamX = +0.;
+    beamY = -4.;
+  } else if( runName_tstr.BeginsWith("BTF_164_2014") ) {
+    beamX = +0.;
+    beamY = -6.;
+  } else if( runName_tstr.BeginsWith("BTF_165_2014") ) {
+    beamX = +0.;
+    beamY = -8.;
+  } else {
+    beamX = -999.;
+    beamY = -999.;
+  }
+
+
+
+}
+
