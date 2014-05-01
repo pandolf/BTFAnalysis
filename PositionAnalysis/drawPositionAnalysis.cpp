@@ -13,6 +13,7 @@
 #include "TLegend.h"
 #include "TGraphErrors.h"
 #include "TEllipse.h"
+#include "TString.h"
 
 
 
@@ -23,8 +24,10 @@ TStyle* setStyle();
 TGraphErrors* get_xyCenter( TH2D* h2_xyPos );
 void drawSinglePositionPlot( const std::string& outputdir, TFile* file, const std::string& runName, const std::string& suffix );
 void drawSinglePlot( const std::string& outputdir, const std::string& saveName, TFile* file, const std::string& name, const std::string& axisName, int nChannels, float xMin=0, float xMax=4095, int rebin=1, bool plotLog=false );
+void fitHodoWithBeam( const std::string& outputdir, const std::string& suffix, TH1D* h1, float r, float& pos, float& pos_err );
 TPaveText* getLabelTop();
 TPaveText* getLabelRun( const std::string& runName, bool top=true );
+void getBeamPosition( const std::string& runName, float& beamX, float& beamY );
 
 
 int main( int argc, char* argv[] ) {
@@ -74,16 +77,8 @@ void drawSinglePositionPlot( const std::string& outputdir, TFile* file, const st
   float beamY = -999.;
   float beamRX = 4.;
   float beamRY = 2.;
-  if( runName == "BTF_94_20140430-073300_beam" ) {
-    beamX = -3.;
-    beamY = +3.;
-  } else if( runName == "BTF_96_20140430-083733_beam" ) {
-    beamX = -6.;
-    beamY = +6.;
-  } else if( runName == "BTF_98_20140430-092026_beam" ) {
-    beamX = -9.;
-    beamY = +9.;
-  }
+  getBeamPosition( runName, beamX, beamY );
+
 
   bool drawBeam = ((beamX>-999.) && (beamY>-999.));
   //bool beamInsideHodo = ((fabs(beamX)<4.) && (fabs(beamY)<4.));
@@ -125,15 +120,25 @@ void drawSinglePositionPlot( const std::string& outputdir, TFile* file, const st
   gr_xyCenter_bgo->SetMarkerSize(1.6);
 
 
+  // try to fit the hodo points with the expected beam size
+  float xPos_hodo_fit, xPos_hodo_fit_err;
+  float yPos_hodo_fit, yPos_hodo_fit_err;
+  fitHodoWithBeam( outputdir, "X"+suffix, h2_xyPos_hodo->ProjectionX(), beamRX, xPos_hodo_fit, xPos_hodo_fit_err );
+  fitHodoWithBeam( outputdir, "Y"+suffix, h2_xyPos_hodo->ProjectionY(), beamRY, yPos_hodo_fit, yPos_hodo_fit_err );
+  //TFile* file_prova = TFile::Open("prova.root", "recreate");
+  //file_prova->cd();
+  //h2_xyPos_hodo->Write();
+  //h2_xyPos_hodo->Write();
+  //file_prova->Close();
+  //exit(11);
+
+  TGraphErrors* gr_xyCenter_hodo_fit = new TGraphErrors(0);
+  gr_xyCenter_hodo_fit->SetPoint(0, xPos_hodo_fit, yPos_hodo_fit);
+  gr_xyCenter_hodo_fit->SetPointError(0, xPos_hodo_fit_err, yPos_hodo_fit_err);
+  gr_xyCenter_hodo_fit->SetMarkerStyle(24);
+  gr_xyCenter_hodo_fit->SetMarkerSize(1.6);
 
 
-  TLegend* legend = new TLegend( 0.75, 0.21, 0.9, 0.39 );
-  legend->SetFillColor(0);
-  legend->SetTextSize(0.038);
-  legend->AddEntry( gr_xyCenter, "CeF3", "P" );
-  legend->AddEntry( gr_xyCenter_bgo, "BGO", "P" );
-  legend->AddEntry( gr_xyCenter_hodo, "Hodo", "P" );
-  legend->Draw("same");
 
 
   TGraph* gr_beamPos = new TGraph(0);
@@ -172,6 +177,14 @@ void drawSinglePositionPlot( const std::string& outputdir, TFile* file, const st
   line_y2->Draw("same");
 
 
+  TLegend* legend = new TLegend( 0.75, 0.21, 0.9, 0.39 );
+  legend->SetFillColor(0);
+  legend->SetTextSize(0.038);
+  legend->AddEntry( gr_xyCenter, "CeF3", "P" );
+  legend->AddEntry( gr_xyCenter_bgo, "BGO", "P" );
+  legend->AddEntry( gr_xyCenter_hodo, "Hodo", "P" );
+  legend->Draw("same");
+
 
   h2_xyPos_hodo->SetMarkerColor(14);
   h2_xyPos->SetMarkerColor(46);
@@ -203,6 +216,7 @@ void drawSinglePositionPlot( const std::string& outputdir, TFile* file, const st
   h2_xyPos->Draw("same");
   h2_xyPos_hodo->Draw("same");
 
+
   TEllipse* beamPos = new TEllipse( beamX, beamY, beamRX, beamRY );
   beamPos->SetLineColor(kBlack);
   beamPos->SetFillStyle(0);
@@ -211,6 +225,7 @@ void drawSinglePositionPlot( const std::string& outputdir, TFile* file, const st
   gr_xyCenter_hodo->Draw("p same");
   gr_xyCenter_bgo->Draw("p same");
   gr_xyCenter->Draw("p same");
+  gr_xyCenter_hodo_fit->Draw("p same");
 
 
   c1->SaveAs(Form("%s/xyPos%s.eps", outputdir.c_str(), suffix.c_str()) );
@@ -224,17 +239,17 @@ void drawSinglePositionPlot( const std::string& outputdir, TFile* file, const st
   h2_axes_zoom->SetYTitle("Y Position [mm]");
   h2_axes_zoom->Draw();
 
-  legend->Draw("same");
   drawBeam = ((fabs(beamX)<xMax) && (fabs(beamY)<xMax));
   if( drawBeam )
     legend2->Draw("same");
   label_top->Draw("same");
   label_run->Draw("same");
-
+  legend->Draw("same");
 
   h2_xyPos_bgo->Draw("same");
   h2_xyPos_hodo->Draw("same");
   h2_xyPos->Draw("same");
+
 
   lineHodo_x1->Draw("same");
   lineHodo_x2->Draw("same");
@@ -246,6 +261,7 @@ void drawSinglePositionPlot( const std::string& outputdir, TFile* file, const st
   gr_xyCenter_hodo->Draw("p same");
   gr_xyCenter_bgo->Draw("p same");
   gr_xyCenter->Draw("p same");
+  gr_xyCenter_hodo_fit->Draw("p same");
 
 
   c1->SaveAs(Form("%s/xyPos%s_zoom.eps", outputdir.c_str(), suffix.c_str()) );
@@ -274,8 +290,9 @@ void drawSinglePlot( const std::string& outputdir, const std::string& saveName, 
   colors.push_back( kGreen );
   colors.push_back( kBlue  );
 
-  float yMin_leg = 0.9-0.05*nChannels;
-  TLegend* legend = new TLegend( 0.6, yMin_leg, 0.9, 0.9 );
+  float yMax_leg = 0.8;
+  float yMin_leg = yMax_leg-0.05*nChannels;
+  TLegend* legend = new TLegend( 0.6, yMin_leg, 0.9, yMax_leg );
   legend->SetTextSize(0.035);
   legend->SetFillColor(0);
 
@@ -508,3 +525,135 @@ TPaveText* getLabelRun( const std::string& runName, bool top ) {
   return label_run;
 
 }
+
+
+
+void fitHodoWithBeam( const std::string& outputdir, const std::string& suffix, TH1D* h1, float r, float& pos, float& pos_err ) {
+
+  h1->Rebin(5);
+  float nentries =  h1->GetEntries();
+
+  TF1* f1_gaus = new TF1( "gaus_hodo", "gaus" );
+  f1_gaus->SetRange(-4., 4.);
+  //f1_gaus->SetParameter(0, nentries);
+  f1_gaus->FixParameter(0, nentries);
+  f1_gaus->SetParameter(1, 0.);
+
+  //f1_gaus->SetParLimits(0, 0.01*nentries, nentries);
+  f1_gaus->SetParLimits(1, -40., 40.);
+  f1_gaus->FixParameter(2, r );
+
+  h1->Fit(f1_gaus, "RNL" );
+  TCanvas* c1 = new TCanvas("c1_temp", "", 600, 600);
+  c1->cd();
+  h1->SetLineColor(kRed);
+  h1->SetLineWidth(2);
+  h1->SetXTitle("Position [mm]");
+  h1->SetYTitle("Hits");
+  h1->Draw("");
+  f1_gaus->SetRange(-40., 40.);
+  f1_gaus->Draw("same");
+  c1->SaveAs(Form("%s/tmpFit%s.eps", outputdir.c_str(), suffix.c_str()));
+  c1->SaveAs(Form("%s/tmpFit%s.png", outputdir.c_str(), suffix.c_str()));
+  delete c1;
+
+  pos = f1_gaus->GetParameter(1);
+  pos_err = f1_gaus->GetParameter(2);
+
+  delete f1_gaus;
+
+}
+
+
+
+
+
+void getBeamPosition( const std::string& runName, float& beamX, float& beamY ) {
+
+  TString runName_tstr(runName.c_str());
+
+
+  if( runName == "BTF_94_20140430-073300_beam" ) {
+    beamX = -3.;
+    beamY = +3.;
+  } else if( runName == "BTF_96_20140430-083733_beam" ) {
+    beamX = -6.;
+    beamY = +6.;
+  } else if( runName == "BTF_98_20140430-092026_beam" ) {
+    beamX = -9.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_144_2014") ) {
+    beamX = +12.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_145_2014") ) {
+    beamX = +10.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_146_2014") ) {
+    beamX = +8.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_147_2014") ) {
+    beamX = +6.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_148_2014") ) {
+    beamX = +4.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_149_2014") ) {
+    beamX = +2.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_150_2014") ) {
+    beamX = +0.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_151_2014") ) {
+    beamX = -2.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_152_2014") ) {
+    beamX = -4.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_153_2014") ) {
+    beamX = -6.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_154_2014") ) {
+    beamX = -8.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_155_2014") ) {
+    beamX = -10.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_156_2014") ) {
+    beamX = -12.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_157_2014") ) {
+    beamX = +0.;
+    beamY = +8.;
+  } else if( runName_tstr.BeginsWith("BTF_158_2014") ) {
+    beamX = +0.;
+    beamY = +6.;
+  } else if( runName_tstr.BeginsWith("BTF_159_2014") ) {
+    beamX = +0.;
+    beamY = +4.;
+  } else if( runName_tstr.BeginsWith("BTF_160_2014") ) {
+    beamX = +0.;
+    beamY = +2.;
+  } else if( runName_tstr.BeginsWith("BTF_161_2014") ) {
+    beamX = +0.;
+    beamY = +0.;
+  } else if( runName_tstr.BeginsWith("BTF_162_2014") ) {
+    beamX = +0.;
+    beamY = -2.;
+  } else if( runName_tstr.BeginsWith("BTF_163_2014") ) {
+    beamX = +0.;
+    beamY = -4.;
+  } else if( runName_tstr.BeginsWith("BTF_164_2014") ) {
+    beamX = +0.;
+    beamY = -6.;
+  } else if( runName_tstr.BeginsWith("BTF_165_2014") ) {
+    beamX = +0.;
+    beamY = -8.;
+  } else {
+    beamX = -999.;
+    beamY = -999.;
+  }
+
+
+
+}
+
