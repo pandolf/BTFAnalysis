@@ -135,7 +135,7 @@ void drawSinglePositionPlot( const std::string& outputdir, TFile* file, const st
   TGraphErrors* gr_xyCenter_hodo_fit = new TGraphErrors(0);
   gr_xyCenter_hodo_fit->SetPoint(0, xPos_hodo_fit, yPos_hodo_fit);
   gr_xyCenter_hodo_fit->SetPointError(0, xPos_hodo_fit_err, yPos_hodo_fit_err);
-  gr_xyCenter_hodo_fit->SetMarkerStyle(24);
+  gr_xyCenter_hodo_fit->SetMarkerStyle(20);
   gr_xyCenter_hodo_fit->SetMarkerSize(1.6);
 
 
@@ -182,7 +182,7 @@ void drawSinglePositionPlot( const std::string& outputdir, TFile* file, const st
   legend->SetTextSize(0.038);
   legend->AddEntry( gr_xyCenter, "CeF3", "P" );
   legend->AddEntry( gr_xyCenter_bgo, "BGO", "P" );
-  legend->AddEntry( gr_xyCenter_hodo, "Hodo", "P" );
+  legend->AddEntry( gr_xyCenter_hodo_fit, "Hodo", "P" );
   legend->Draw("same");
 
 
@@ -222,10 +222,10 @@ void drawSinglePositionPlot( const std::string& outputdir, TFile* file, const st
   beamPos->SetFillStyle(0);
   beamPos->Draw("same"); 
 
-  gr_xyCenter_hodo->Draw("p same");
+  //gr_xyCenter_hodo->Draw("p same");  // now using hodo_fit
+  gr_xyCenter_hodo_fit->Draw("p same");
   gr_xyCenter_bgo->Draw("p same");
   gr_xyCenter->Draw("p same");
-  gr_xyCenter_hodo_fit->Draw("p same");
 
 
   c1->SaveAs(Form("%s/xyPos%s.eps", outputdir.c_str(), suffix.c_str()) );
@@ -258,10 +258,10 @@ void drawSinglePositionPlot( const std::string& outputdir, TFile* file, const st
 
   beamPos->Draw("same"); 
 
-  gr_xyCenter_hodo->Draw("p same");
+  //gr_xyCenter_hodo->Draw("p same"); // now using hodo_fit
+  gr_xyCenter_hodo_fit->Draw("p same");
   gr_xyCenter_bgo->Draw("p same");
   gr_xyCenter->Draw("p same");
-  gr_xyCenter_hodo_fit->Draw("p same");
 
 
   c1->SaveAs(Form("%s/xyPos%s_zoom.eps", outputdir.c_str(), suffix.c_str()) );
