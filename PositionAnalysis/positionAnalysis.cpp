@@ -7,6 +7,7 @@
 #include "TH2D.h"
 #include "TFile.h"
 #include "TTree.h"
+#include "TVector2.h"
 
 #include "fastDQM_CeF3_BTF.h"
 
@@ -48,7 +49,6 @@ class HodoCluster {
 
 
 
-
 std::vector< std::pair<float, float> > getPedestals( const std::string& type, const std::string& fileName );
 std::vector<float> subtractPedestals( std::vector<float> raw, std::vector< std::pair<float, float> > pedestals, float nSigma );
 float sumVector( std::vector<float> v );
@@ -56,6 +56,8 @@ bool checkVector( std::vector<float> v, float theMax=4095. );
 //float getMeanposHodo( std::vector<float> hodo, int& nHodoFibers, int& nHodoClusters );
 float getMeanposHodo( std::vector<HodoCluster*> clusters );
 std::vector<HodoCluster*> getHodoClusters( std::vector<float> hodo_corr, int nClusterMax );
+void getCeF3Position( std::vector<float> cef3, float& xPos, float& yPos );
+float getSingleCef3Position( float en );
 
 
 
@@ -130,6 +132,14 @@ int main( int argc, char* argv[] ) {
   TH1D* h1_xPos_singleEle = new TH1D("xPos_singleEle", "", nBins, -xMax, xMax);
   TH1D* h1_yPos_singleEle = new TH1D("yPos_singleEle", "", nBins, -xMax, xMax);
   TH2D* h2_xyPos_singleEle = new TH2D("xyPos_singleEle", "", nBins, -xMax, xMax, nBins, -xMax, xMax);
+
+  TH1D* h1_xPos_new = new TH1D("xPos_new", "", nBins, -xMax, xMax);
+  TH1D* h1_yPos_new = new TH1D("yPos_new", "", nBins, -xMax, xMax);
+  TH2D* h2_xyPos_new = new TH2D("xyPos_new", "", nBins, -xMax, xMax, nBins, -xMax, xMax);
+
+  TH1D* h1_xPos_new_singleEle = new TH1D("xPos_new_singleEle", "", nBins, -xMax, xMax);
+  TH1D* h1_yPos_new_singleEle = new TH1D("yPos_new_singleEle", "", nBins, -xMax, xMax);
+  TH2D* h2_xyPos_new_singleEle = new TH2D("xyPos_new_singleEle", "", nBins, -xMax, xMax, nBins, -xMax, xMax);
 
   TH1D* h1_cef3_0   = new TH1D("cef3_0",   "", 5000, 0., 5000.);
   TH1D* h1_cef3_1   = new TH1D("cef3_1",   "", 5000, 0., 5000.);
@@ -532,6 +542,8 @@ int main( int argc, char* argv[] ) {
         //float position = xySize/2. - chamfer/4.;
         float position = 12. - 0.696; // using FN's infallible trigonometry
 
+        //std::vector
+
         std::vector<float> xPosW;
         xPosW.push_back(cef3_corr[0]*(-position));
         xPosW.push_back(cef3_corr[1]*(+position));
@@ -545,6 +557,9 @@ int main( int argc, char* argv[] ) {
         yPosW.push_back(cef3_corr[3]*(-position));
 
 
+        float xPos_new, yPos_new;
+        getCeF3Position( cef3_corr, xPos_new, yPos_new );
+
         float xPos = sumVector(xPosW)/eTot_corr;
         float yPos = sumVector(yPosW)/eTot_corr;
 
@@ -552,6 +567,11 @@ int main( int argc, char* argv[] ) {
         h1_yPos->Fill( yPos );
 
         h2_xyPos->Fill( xPos, yPos );
+
+        h1_xPos_new->Fill( xPos_new );
+        h1_yPos_new->Fill( yPos_new );
+
+        h2_xyPos_new->Fill( xPos_new, yPos_new );
 
 
         // CORRELATIONS BETWEEN CALO AND HODO:
@@ -567,6 +587,11 @@ int main( int argc, char* argv[] ) {
           h1_yPos_singleEle->Fill( yPos );
   
           h2_xyPos_singleEle->Fill( xPos, yPos );
+
+          h1_xPos_new_singleEle->Fill( xPos_new );
+          h1_yPos_new_singleEle->Fill( yPos_new );
+  
+          h2_xyPos_new_singleEle->Fill( xPos_new, yPos_new );
 
           h2_correlation_cef3_hodo_xPos_singleEle->Fill( xPos, xPos_hodo );
           h2_correlation_cef3_hodo_yPos_singleEle->Fill( yPos, yPos_hodo );
@@ -619,6 +644,14 @@ int main( int argc, char* argv[] ) {
   h1_xPos_singleEle->Write();
   h1_yPos_singleEle->Write();
   h2_xyPos_singleEle->Write();
+
+  h1_xPos_new->Write();
+  h1_yPos_new->Write();
+  h2_xyPos_new->Write();
+
+  h1_xPos_new_singleEle->Write();
+  h1_yPos_new_singleEle->Write();
+  h2_xyPos_new_singleEle->Write();
 
   h1_cef3_0->Write();
   h1_cef3_1->Write();
@@ -885,5 +918,57 @@ std::vector<HodoCluster*> getHodoClusters( std::vector<float> hodo_corr, int nCl
 
 
   return clusters;
+
+}
+
+
+
+void getCeF3Position( std::vector<float> cef3, float& xPos, float& yPos ) {
+
+  xPos=0.;
+  yPos=0.;
+
+  float offset02 = 0.;
+  //float offset02 = 0.0170062;
+  float offset13 = 0.0594743;
+  float r02 = cef3[0]/cef3[2] - offset02;
+  float r13 = cef3[1]/cef3[3] - offset13;
+  float diag02 = (r02>1.) ? getSingleCef3Position( r02 ) : -getSingleCef3Position( 1./r02 );
+  float diag13 = (r13>1.) ? getSingleCef3Position( r13 ) : -getSingleCef3Position( 1./r13 );
+
+  TVector2 v( diag13, diag02 );
+  float pi = 3.14159;
+  float theta = pi/4.; // 45 degrees 
+  TVector2 d = v.Rotate(theta);
+
+  xPos = d.X();
+  yPos = d.Y();
+
+}
+
+
+float getSingleCef3Position( float en ) {
+
+  float c = 1. - en;
+  //float b = 1.32340e-02;
+  //float a = 1.45209e-03;
+  //float b = 1.89382e-02;
+  //float a = 1.50157e-03;
+  float b = 1.40598e-02;
+  float a = 1.82353e-03;
+
+  float theSqrt = b*b - 4.*a*c;
+
+  float x1 = ( theSqrt>0. ) ? (-b + sqrt( theSqrt ))/(2.*a) : 0.;
+  float x2 = ( theSqrt>0. ) ? (-b - sqrt( theSqrt ))/(2.*a) : 0.;
+
+  float returnX;
+  if( x1>x2 ) {
+    returnX = x1;
+  } else {
+    returnX = x2;
+  }
+
+  return returnX;
 
 }
