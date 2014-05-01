@@ -11,7 +11,7 @@ ROOTFLAG = `${ROOTSYS}/bin/root-config --cflags --libs`
 EXTRALIBS := -L$(ROOTSYS)/lib  -lHtml -lMathCore -lGenVector -lMinuit -lEG -lRooFitCore -lRooFit
 
 
-all: positionAnalysis drawPositionAnalysis
+all: positionAnalysis drawPositionAnalysis calibrateCeF3
 
 
 
