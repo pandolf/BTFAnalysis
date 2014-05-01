@@ -297,8 +297,9 @@ void drawSinglePlot( const std::string& outputdir, const std::string& saveName, 
   colors.push_back( kGreen );
   colors.push_back( kBlue  );
 
-  float yMin_leg = 0.9-0.05*nChannels;
-  TLegend* legend = new TLegend( 0.6, yMin_leg, 0.9, 0.9 );
+  float yMax_leg = 0.8;
+  float yMin_leg = yMax_leg-0.05*nChannels;
+  TLegend* legend = new TLegend( 0.6, yMin_leg, 0.9, yMax_leg );
   legend->SetTextSize(0.035);
   legend->SetFillColor(0);
 
