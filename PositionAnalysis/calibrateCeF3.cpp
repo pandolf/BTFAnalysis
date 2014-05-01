@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <cmath>
 
 #include "TFile.h"
 #include "TTree.h"
@@ -14,9 +15,17 @@ TF1* fitSingleElectronPeak( const std::string& outputdir, int i, TTree* tree );
 TF1* checkTotalResolution( const std::string& outputdir, TTree* tree );
 
 
-int main() {
+int main( int argc, char* argv[] ) {
+
 
   std::string runName = "BTF_92_20140430-020137_beam_uncalib";
+  if( argc>1 ) {
+    std::string runName_str(argv[1]);
+    runName = runName_str;
+  }
+
+
+
   TFile* file = TFile::Open(Form("PosAn_%s.root", runName.c_str()) );
   TTree* tree = (TTree*)file->Get("tree_passedEvents");
 
@@ -46,10 +55,10 @@ int main() {
   }
 
   ofs.close();
+  std::cout << "-> Saved constants in: " << ofsName << std::endl;
+
 
   checkTotalResolution( outputdir, tree );
-
-  std::cout << "-> Saved constants in: " << ofsName << std::endl;
 
   return 0;
 
@@ -91,7 +100,14 @@ TF1* checkTotalResolution( const std::string& outputdir, TTree* tree ) {
 
   std::cout << std::endl;
   std::cout << std::endl;
-  std::cout << "Total resolution: " << f1->GetParameter(2)/f1->GetParameter(1) << std::endl;
+  float mean  = f1->GetParameter(1);
+  float sigma = f1->GetParameter(2);
+  float reso = sigma/mean;
+  std::cout << "Total " << std::endl;
+  std::cout << "  Mean       : " << mean << std::endl;
+  std::cout << "  Sigma      : " << sigma << std::endl;
+  std::cout << "  Resolution : " << sigma/mean << std::endl;
+  std::cout << "Corresponds to a stochastic term of: " << 100.*reso*sqrt(0.5) << " %" << std::endl;
 
   return f1;
 
