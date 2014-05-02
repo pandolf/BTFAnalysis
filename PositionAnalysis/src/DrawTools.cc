@@ -2,7 +2,7 @@
 
 
 
-TPaveText* DrawTools::getLabelTop( int beamEnergy) {
+TPaveText* DrawTools::getLabelTop( int beamEnergy ) {
 
   TPaveText* label_top = new TPaveText(0.4,0.953,0.975,0.975, "brNDC");
   label_top->SetFillColor(kWhite);
