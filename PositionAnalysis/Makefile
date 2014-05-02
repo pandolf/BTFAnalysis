@@ -28,8 +28,8 @@ calibrateCeF3: calibrateCeF3.cpp
 hodoscopeAnalysis: hodoscopeAnalysis.cpp
 	$(CC) -Wall $(INCLUDES) -o hodoscopeAnalysis hodoscopeAnalysis.cpp $(ROOTFLAG) $(EXTRALIBS)
 
-drawHodoClustersVsEnergy: drawHodoClustersVsEnergy.cpp
-	$(CC) -Wall $(INCLUDES) -o drawHodoClustersVsEnergy drawHodoClustersVsEnergy.cpp $(ROOTFLAG) $(EXTRALIBS)
+drawHodoClustersVsEnergy: DrawTools.o drawHodoClustersVsEnergy.cpp
+	$(CC) -Wall $(INCLUDES) -o drawHodoClustersVsEnergy drawHodoClustersVsEnergy.cpp DrawTools.o $(ROOTFLAG) $(EXTRALIBS)
 
 drawShitVsDiagonal: drawShitVsDiagonal.cpp
 	$(CC) -Wall $(INCLUDES) -o drawShitVsDiagonal drawShitVsDiagonal.cpp $(ROOTFLAG) $(EXTRALIBS)
