@@ -16,13 +16,10 @@
 #include "TProfile.h"
 #include "TString.h"
 
+#include "interface/DrawTools.h"
 
 
 std::string runName;
-
-TStyle* setStyle();
-TPaveText* getLabelTop();
-TPaveText* getLabelRun( const std::string& runName, bool top=true );
 
 
 
@@ -46,7 +43,7 @@ int main( int argc, char* argv[] ) {
   system(mkdir_command.c_str());
 
 
-  TStyle* style = setStyle();
+  TStyle* style = DrawTools::setStyle();
   style->cd();
 
 
@@ -205,38 +202,6 @@ TStyle* setStyle() {
 
 
 
-
-
-
-
-TPaveText* getLabelTop() {
-
-  TPaveText* label_top = new TPaveText(0.4,0.953,0.975,0.975, "brNDC");
-  label_top->SetFillColor(kWhite);
-  label_top->SetTextSize(0.038);
-  label_top->SetTextAlign(31); // align right
-  label_top->SetTextFont(62);
-  label_top->AddText("500 MeV Electron Beam");
-
-  return label_top;
-
-}
-
-
-TPaveText* getLabelRun( const std::string& runName, bool top ) {
-
-  float yMin = (top) ? 0.86 : 0.18;
-  float yMax = (top) ? 0.91 : 0.23;
-  TPaveText* label_run = new TPaveText(0.34,yMin,0.9,yMax, "brNDC");
-  label_run->SetFillColor(kWhite);
-  label_run->SetTextSize(0.033);
-  label_run->SetTextAlign(11); // align right
-  label_run->SetTextFont(42);
-  label_run->AddText(Form("Run %s", runName.c_str()));
-
-  return label_run;
-
-}
 
 
 
