@@ -12,12 +12,12 @@ EXTRALIBS := -L$(ROOTSYS)/lib  -lHtml -lMathCore -lGenVector -lMinuit -lEG -lRoo
 
 
 
-all: positionAnalysis drawPositionAnalysis hodoscopeAnalysis calibrateCeF3 drawHodoClustersVsEnergy drawShitVsDiagonal
+all: positionAnalysis drawPositionAnalysis hodoscopeAnalysis calibrateCeF3 drawHodoClustersVsEnergy drawShitVsDiagonal HodoCluster.o
 
 
 
-positionAnalysis: positionAnalysis.cpp
-	$(CC) -Wall $(INCLUDES) -o positionAnalysis positionAnalysis.cpp $(ROOTFLAG) $(EXTRALIBS)
+positionAnalysis: HodoCluster.o positionAnalysis.cpp 
+	$(CC) -Wall $(INCLUDES) -o positionAnalysis positionAnalysis.cpp HodoCluster.o $(ROOTFLAG) $(EXTRALIBS)
 
 drawPositionAnalysis: drawPositionAnalysis.cpp
 	$(CC) -Wall $(INCLUDES) -o drawPositionAnalysis drawPositionAnalysis.cpp $(ROOTFLAG) $(EXTRALIBS)
@@ -36,6 +36,12 @@ drawShitVsDiagonal: drawShitVsDiagonal.cpp
 
 
 
+
+HodoCluster.o: src/HodoCluster.cc
+	$(CC) $(CFLAGS) -c src/HodoCluster.cc $(ROOTFLAG) $(EXTRALIBS)
+
+
+
 clean:
 	rm positionAnalysis
 	rm drawPositionAnalysis 
@@ -43,3 +49,4 @@ clean:
 	rm calibrateCeF3
 	rm drawHodoClustersVsEnergy
 	rm drawShitVsDiagonal
+	rm *.o

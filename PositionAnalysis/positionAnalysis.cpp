@@ -10,42 +10,10 @@
 #include "TVector2.h"
 
 #include "fastDQM_CeF3_BTF.h"
+#include "interface/HodoCluster.h"
 
 
 
-class HodoCluster {
-
- public:
-
-  HodoCluster() {
-    size_ = 0;
-    pos_ = 0.;
-  }
-
-  ~HodoCluster() {};
-
-  float getSize() { return size_; };
-  float getPosition() { return pos_; };
-
-  void addFibre( int i ) {
-    if( size_==0 ) {
-      pos_ += -(i-3.5);
-      size_+=1;
-    } else {
-      pos_ *= (float)size_;
-      pos_ += -(i-3.5);
-      size_+=1;
-      pos_ /= size_;
-    }
-  }
-
-
- private:
-
-  int size_;
-  float pos_;
-
-};
 
 
 
@@ -57,7 +25,7 @@ bool checkVector( std::vector<float> v, float theMax=4095. );
 float getMeanposHodo( std::vector<HodoCluster*> clusters );
 std::vector<HodoCluster*> getHodoClusters( std::vector<float> hodo_corr, int nClusterMax );
 void getCeF3Position( std::vector<float> cef3, float& xPos, float& yPos );
-float getSingleCef3Position( float en );
+float getSingleCef3Position( float en, bool takemin=false );
 
 
 
@@ -933,8 +901,8 @@ void getCeF3Position( std::vector<float> cef3, float& xPos, float& yPos ) {
   float offset13 = 0.0594743;
   float r02 = cef3[0]/cef3[2] - offset02;
   float r13 = cef3[1]/cef3[3] - offset13;
-  float diag02 = (r02>1.) ? getSingleCef3Position( r02 ) : -getSingleCef3Position( 1./r02 );
-  float diag13 = (r13>1.) ? getSingleCef3Position( r13 ) : -getSingleCef3Position( 1./r13 );
+  float diag02 = (r02>1.) ? getSingleCef3Position( r02, false ) : -getSingleCef3Position( 1./r02, false );
+  float diag13 = (r13>1.) ? getSingleCef3Position( r13, false ) : -getSingleCef3Position( 1./r13, false );
 
   TVector2 v( diag13, diag02 );
   float pi = 3.14159;
@@ -947,7 +915,7 @@ void getCeF3Position( std::vector<float> cef3, float& xPos, float& yPos ) {
 }
 
 
-float getSingleCef3Position( float en ) {
+float getSingleCef3Position( float en, bool takemin ) {
 
   float c = 1. - en;
   //float b = 1.32340e-02;
@@ -962,12 +930,8 @@ float getSingleCef3Position( float en ) {
   float x1 = ( theSqrt>0. ) ? (-b + sqrt( theSqrt ))/(2.*a) : 0.;
   float x2 = ( theSqrt>0. ) ? (-b - sqrt( theSqrt ))/(2.*a) : 0.;
 
-  float returnX;
-  if( x1>x2 ) {
-    returnX = x1;
-  } else {
-    returnX = x2;
-  }
+
+  float returnX = (takemin) ? TMath::Min(x1,x2) : TMath::Max(x1,x2);
 
   return returnX;
 
